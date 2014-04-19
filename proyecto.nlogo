@@ -1,4 +1,4 @@
-;__includes ["bdi.nls" "communication.nls"]
+__includes ["bdi.nls" "communication.nls"]
 
 breed [administrators administrator] ;; managers
 breed [delivers deliver] ;; admin
@@ -9,12 +9,12 @@ breed [resources resource] ;; Un subconjunto de agentes para los recursos
 breed [abilities abilitie] ;; un subconjunto de agnetes para los skills
 
 resources-own [hp team] ;; Esta es la variable relacionada con los recursos.
-workers-own [hp team beliefs intentions incoming-queue] ;; Esta es la variable relacionada con los recursos.
+workers-own [hp team beliefs intentions incoming-queue habilidad enabled] ;; Esta es la variable relacionada con los recursos.
 delivers-own [hp team stock]
 abilities-own [hp team]
 administrators-own [hp team beliefs intentions incoming-queue]
-homeworks-own [hp team]
-
+homeworks-own [hp team enable]
+globals [tareas ]
 to setup
   clear-all
   setup-patches
@@ -25,26 +25,19 @@ end
 to setup-patches 
   ask patches [ set pcolor green ]  ;; Todos de color verde (pasto)
   
-  set-default-shape administrators "wolf" ;; Los samurais se mostraran como flechas
-  
+  set-default-shape administrators "wolf" ;; Los samurais se mostraran como flechas  
   set-default-shape delivers "flag" ;; Los "castillos" se mostraran como banderas
-
-  set-default-shape workers "person" ;; Los recursos se veran como estrellas
-  
-  set-default-shape resources "tree"
-  
-  set-default-shape abilities "star"
-  
-  set-default-shape homeworks "box"
-  
+  set-default-shape workers "person" ;; Los recursos se veran como estrellas  
+  set-default-shape resources "tree"  
+  set-default-shape abilities "star"  
+  set-default-shape homeworks "box"  
   
   setup-delivers
   setup-workers
   setup-resources
   setup-abilities
   setup-administrators
-  setup-homeworks
-  
+  setup-homeworks  
 
 end
 
@@ -53,20 +46,38 @@ end
 
 
 to go
+  run-experiment
+  ask workers with [hp = 1][]
   
 end
 
+to run-experiment
+  
+  get-task
+  
+  ask get-manager [ 
+    let msg create-message "request"
+    set msg add-content tareas msg
+    broadcast-to workers msg  ]
+  
+  ask workers [execute-intentions]
+  ask administrators [execute-intentions]
+  
+ 
+  
+end
 
 to setup-homeworks
   create-homeworks 20
   [
     set color cyan
     setxy random-xcor random-ycor
-
+    set enable 0
+    set hp random 100
   ]
   
   ask homeworks [ move-to one-of patches with [(pcolor = green) and (not any? homeworks-here) and (not any? resources-here) and
-       (not any? ) ]]
+       (not any? abilities-here) ]]
   
 end
 
@@ -77,7 +88,10 @@ to setup-administrators
     set hp 5
     set team 3
     setxy random-xcor random-ycor
-    
+    set beliefs []
+    set intentions []
+    set incoming-queue []  
+    add-intention "evaluate-msg" "true"    
   ]  
   
 ;  ask administrators with [team = 3][ move-to one-of patches with [(pcolor = brown) and (not any? administrators-here)]]
@@ -103,17 +117,14 @@ to setup-delivers
     setxy (min-pxcor - 5) (max-pycor + 5) ;; Las coordenadas del castillo
     set hp 10 ;; Los hit-points del castillo
     set team 3 ;; Equipo 1
-  ] 
-  
-
+  ]  
   
   ;; Colorea los patches alrededor de los castillos
   ask delivers [if team = 2 [ask patches in-radius 3 [set pcolor red]] ] 
   ask delivers [if team = 3 [ask patches in-radius 3 [set pcolor violet]] ] 
   ask delivers [set pcolor white]
 ;  ask delivers [ifelse team = 1 [ask neighbors [set pcolor 107]] [ask neighbors [set pcolor 17]]] 
-  
-  
+    
 end
 
 to setup-workers
@@ -122,6 +133,11 @@ to setup-workers
     set color 104 ;; El trabajador del equipo 1
     set hp 10 ;; Le asigna sus hit-points
     set team 1
+    set enabled 1
+    set beliefs []
+    set intentions []
+    set incoming-queue []
+    add-intention "listen-to-messages" "true"
 
   ]
     
@@ -154,15 +170,108 @@ to setup-abilities
     setxy (max-pxcor - 5) (max-pycor - 5)
     
   ]  
-  
+end
 
+
+to listen-to-messages
+ 
+
+   let msg get-message
+   let performative get-performative msg
+   
+   if performative = "request" [
+     evaluate-and-reply-cfp msg
+     ]
+    
+   
+ 
+ ;  if performative = "cfp" [evaluate-and-reply-cfp msg] 
+  ; if performative = "accept-proposal" [plan-to-pickup-task msg stop]
+   ;if perfomsgrmative = "reject-proposal" [do-nothing]
+
+end
+
+to evaluate-msg
+  
+  let msg 0
+   let performative 0
+  
+  while [not empty? incoming-queue]
+  [
+    set msg get-message
+    set performative get-performative msg
+    
+    if performative = "inform"[
+
+       show msg
+    ]
+  ]
+end
+
+to evaluate-and-reply-cfp [msg]
+  let peso_tarea [hp] of homework get-content msg
+  let sender  get-sender msg
+  let receiver who
+  
+  if( enabled = 1)
+  [
+;;    ask administrator read-from-string sender [     add-intention "listen-to-messages" "true" ]
+    send add-content "available" create-reply "inform" msg
+
+  ]
+  
+end
+
+to plan-to-pickup-task [msg]
+  
+end
+
+to get-task
+  set tareas [   who ] of one-of homeworks with [enable = 0]
+
+end
+
+to-report get-manager
+  report one-of administrators
+end
+
+to deliver-task
+  
+end
+  
+to waiting-for-commands
+  
+end
+
+to move-to-resource
+  
+end
+
+to move-to-hability
+ 
+end
+
+to-report at-resourcer
+  
+end
+
+to-report at-hability
+  
+end
+
+to buy-skill
+  
+end
+
+to buy-resource
+  
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-433
-10
-1017
-615
+304
+16
+888
+621
 18
 18
 15.52
@@ -208,8 +317,8 @@ BUTTON
 163
 43
 go
-go
-T
+run-experiment
+NIL
 1
 T
 OBSERVER
@@ -324,10 +433,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot count turtles"
 
 PLOT
-220
-405
-420
-555
+17
+455
+217
+605
 plot 2
 NIL
 NIL
@@ -340,6 +449,17 @@ false
 "" ""
 PENS
 "default" 1.0 0 -16777216 true "" "plot count turtles"
+
+SWITCH
+145
+236
+291
+269
+show_messages
+show_messages
+1
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?

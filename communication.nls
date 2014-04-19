@@ -66,7 +66,8 @@ end
 ;; broadcasting to all agents of breed t-breed
 to broadcast-to [t-breed msg]
   foreach [who] of t-breed [
-     send add-receiver ? msg    
+     send add-receiver ? msg   
+     show msg 
   ]
 end 
 
@@ -89,7 +90,7 @@ end
 ;; Reports the sender of a message
 to-report get-sender [msg]
   report remove "sender:" first (filter [not is-number? ? and member? "sender:" ?] msg) 
-  ;;report item ((position "sender:" msg) + 1) msg 
+  report item ((position "sender:" msg) + 1) msg 
 end
 
 ;; Reports (returns) the content of a message
