@@ -9,15 +9,16 @@ breed [resources resource] ;; Un subconjunto de agentes para los recursos
 breed [abilities abilitie] ;; un subconjunto de agnetes para los skills
 
 resources-own [hp team] ;; Esta es la variable relacionada con los recursos.
-workers-own [hp team beliefs intentions incoming-queue habilidad enabled tiempo recurso competencia calidad] ;; Esta es la variable relacionada con los recursos.
+workers-own [hp team beliefs intentions incoming-queue habilidad enable tiempo recurso competencia calidad] ;; Esta es la variable relacionada con los recursos.
 delivers-own [hp team stock]
 abilities-own [hp team]
 administrators-own [hp team beliefs intentions incoming-queue]
-homeworks-own [hp team enable tiempo recurso competencia calidad]
+homeworks-own [hp team enable inicio tiempo recurso competencia calidad]
 globals [tareas ]
 to setup
   clear-all
   setup-patches
+  reset-ticks
 end
 
 
@@ -48,7 +49,7 @@ end
 to go
   run-experiment
   ask workers with [hp = 1][]
-  
+  tick
 end
 
 to run-experiment
@@ -72,12 +73,13 @@ to setup-homeworks
   [
     set color cyan
     setxy random-xcor random-ycor
-    set enable 0
+    set enable 1
     set hp random 100
     set recurso random 100
     set competencia random 100
     set calidad random 100
     set tiempo random 100
+    set inicio 0
   ]
   
   ask homeworks [ move-to one-of patches with [(pcolor = green) and (not any? homeworks-here) and (not any? resources-here) and
@@ -137,7 +139,7 @@ to setup-workers
     set color 104 ;; El trabajador del equipo 1
     set hp 10 ;; Le asigna sus hit-points
     set team 1
-    set enabled 1
+    set enable 1
     set beliefs []
     set intentions []
     set incoming-queue []
@@ -187,12 +189,15 @@ to listen-to-messages
    let msg get-message
    let performative get-performative msg
    
+   ask worker who [
+       add-intention "listen-to-messages" "true"
+     ]
+   
    if performative = "request" [
      evaluate-and-reply-cfp msg
+     
      ]
-    
    
- 
  ;  if performative = "cfp" [evaluate-and-reply-cfp msg] 
   ; if performative = "accept-proposal" [plan-to-pickup-task msg stop]
    ;if perfomsgrmative = "reject-proposal" [do-nothing]
@@ -206,17 +211,17 @@ to evaluate-msg
   let list_eval []
   let content 0
   
+  ask administrator who [ add-intention "evaluate-msg" "true"    ]
+  
   while [not empty? incoming-queue]
   [
     set msg get-message
+       
     set performative get-performative msg
     
-    if performative = "inform"[
-      
-      set content get-content msg
-      
-      if content != "unavailable"[
-       
+    if performative = "inform"[      
+      set content get-content msg      
+      if content != "unavailable"[       
        set list_eval lput msg list_eval
       ]
     ]
@@ -263,10 +268,14 @@ to evaluate-msg
          set idx identi
         ]
      ]
-    show id_hw
-    show idx
         
     if idx != -1[
+      ask worker idx [
+        set enable 0
+        ]
+      ask homework id_hw[
+        set enable 0
+        ]
       
       move-hw-worker id_hw idx
     ]
@@ -279,7 +288,7 @@ to evaluate-and-reply-cfp [msg]
   let sender  get-sender msg
   let receiver who
   
-  ifelse( enabled = 1)
+  ifelse( enable = 1)
   [
 ;;    ask administrator read-from-string sender [     add-intention "listen-to-messages" "true" ]
     send add-content id_tarea create-reply "inform" msg
@@ -288,6 +297,7 @@ to evaluate-and-reply-cfp [msg]
   [
       send add-content "unavailable" create-reply "inform" msg    
     ]
+
   
 end
 
@@ -296,7 +306,7 @@ to plan-to-pickup-task [msg]
 end
 
 to get-task
-  set tareas [   who ] of one-of homeworks with [enable = 0]
+  set tareas [   who ] of one-of homeworks with [enable = 1]
 
 end
 
@@ -304,21 +314,6 @@ to-report get-manager
   report one-of administrators
 end
 
-to deliver-task
-  
-end
-  
-to waiting-for-commands
-  
-end
-
-to move-to-resource
-  
-end
-
-to move-to-hability
- 
-end
 
 to move-hw-worker[ hw wk]
   
@@ -330,35 +325,20 @@ to move-hw-worker[ hw wk]
     set xc xcor
     ]
   
-  ask worker wk [
-    
+  ask worker wk [    
     set xcor xc + 1
     set ycor yc + 1
     ]
   
-end
-
-to-report at-resourcer
-  
-end
-
-to-report at-hability
-  
-end
-
-to buy-skill
-  
-end
-
-to buy-resource
+  show ticks
   
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
 304
 16
-856
-589
+857
+590
 17
 17
 15.52
@@ -405,7 +385,7 @@ BUTTON
 43
 go
 run-experiment
-NIL
+T
 1
 T
 OBSERVER

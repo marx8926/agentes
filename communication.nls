@@ -67,7 +67,6 @@ end
 to broadcast-to [t-breed msg]
   foreach [who] of t-breed [
      send add-receiver ? msg   
-     show msg 
   ]
 end 
 
