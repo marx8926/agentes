@@ -9,11 +9,11 @@ breed [resources resource] ;; Un subconjunto de agentes para los recursos
 breed [abilities abilitie] ;; un subconjunto de agnetes para los skills
 
 resources-own [hp team] ;; Esta es la variable relacionada con los recursos.
-workers-own [hp team beliefs intentions incoming-queue habilidad enabled] ;; Esta es la variable relacionada con los recursos.
+workers-own [hp team beliefs intentions incoming-queue habilidad enabled tiempo recurso competencia calidad] ;; Esta es la variable relacionada con los recursos.
 delivers-own [hp team stock]
 abilities-own [hp team]
 administrators-own [hp team beliefs intentions incoming-queue]
-homeworks-own [hp team enable]
+homeworks-own [hp team enable tiempo recurso competencia calidad]
 globals [tareas ]
 to setup
   clear-all
@@ -74,6 +74,10 @@ to setup-homeworks
     setxy random-xcor random-ycor
     set enable 0
     set hp random 100
+    set recurso random 100
+    set competencia random 100
+    set calidad random 100
+    set tiempo random 100
   ]
   
   ask homeworks [ move-to one-of patches with [(pcolor = green) and (not any? homeworks-here) and (not any? resources-here) and
@@ -138,6 +142,10 @@ to setup-workers
     set intentions []
     set incoming-queue []
     add-intention "listen-to-messages" "true"
+    set recurso random 100
+    set competencia random 100
+    set calidad random 100
+    set tiempo random 100
 
   ]
     
@@ -194,7 +202,9 @@ end
 to evaluate-msg
   
   let msg 0
-   let performative 0
+  let performative 0
+  let list_eval []
+  let content 0
   
   while [not empty? incoming-queue]
   [
@@ -202,23 +212,65 @@ to evaluate-msg
     set performative get-performative msg
     
     if performative = "inform"[
-
-       show msg
+      
+      set content get-content msg
+      
+      if content != "unavailable"[
+       
+       set list_eval lput msg list_eval
+      ]
     ]
+  ]
+  ifelse empty? list_eval
+  [
+    ;;evaluamos la coalición
+   
+   
+   ]
+  [
+    ;; escogemos el agente 
+     
+    let eval -1
+    let idx -1
+    let temp []
+    let identi 0
+    let id_hw -1
+    
+    while [not empty? list_eval]
+    [
+       set temp first list_eval
+       
+       set list_eval remove temp list_eval 
+       
+       set identi read-from-string remove "sender:" item 1 temp
+       
+       set id_hw item 4 temp      
+       ;show temp
+       
+       show id_hw
+       ask worker identi [
+        
+          show recurso + competencia + calidad + tiempo
+       ]
+     ]
   ]
 end
 
 to evaluate-and-reply-cfp [msg]
   let peso_tarea [hp] of homework get-content msg
+  let id_tarea get-content msg
   let sender  get-sender msg
   let receiver who
   
-  if( enabled = 1)
+  ifelse( enabled = 1)
   [
 ;;    ask administrator read-from-string sender [     add-intention "listen-to-messages" "true" ]
-    send add-content "available" create-reply "inform" msg
+    send add-content id_tarea create-reply "inform" msg
 
   ]
+  [
+      send add-content "unavailable" create-reply "inform" msg    
+    ]
   
 end
 
@@ -270,10 +322,10 @@ end
 GRAPHICS-WINDOW
 304
 16
-888
-621
-18
-18
+856
+589
+17
+17
 15.52
 1
 10
@@ -284,10 +336,10 @@ GRAPHICS-WINDOW
 1
 1
 1
--18
-18
--18
-18
+-17
+17
+-17
+17
 0
 0
 1
