@@ -231,10 +231,12 @@ to evaluate-msg
     ;; escogemos el agente 
      
     let eval -1
+    let result 400
     let idx -1
     let temp []
     let identi 0
     let id_hw -1
+    let val_hw 0
     
     while [not empty? list_eval]
     [
@@ -247,12 +249,27 @@ to evaluate-msg
        set id_hw item 4 temp      
        ;show temp
        
-       show id_hw
+       ask homework id_hw[
+          set val_hw recurso + competencia + calidad + tiempo
+         ]
        ask worker identi [
         
-          show recurso + competencia + calidad + tiempo
+          set eval recurso + competencia + calidad + tiempo
        ]
+       
+       if val_hw <= eval and eval <= result
+       [
+         set result eval
+         set idx identi
+        ]
      ]
+    show id_hw
+    show idx
+        
+    if idx != -1[
+      
+      move-hw-worker id_hw idx
+    ]
   ]
 end
 
@@ -301,6 +318,24 @@ end
 
 to move-to-hability
  
+end
+
+to move-hw-worker[ hw wk]
+  
+  let yc 0
+  let xc 0
+  
+  ask homework hw[
+    set yc ycor
+    set xc xcor
+    ]
+  
+  ask worker wk [
+    
+    set xcor xc + 1
+    set ycor yc + 1
+    ]
+  
 end
 
 to-report at-resourcer
