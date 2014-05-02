@@ -1,4 +1,4 @@
-__includes ["bdi.nls" "communication.nls"]
+__includes ["bdi.nls" "communication.nls" "integer.nls"]
 
 breed [administrators administrator] ;; managers
 breed [delivers deliver] ;; admin
@@ -9,11 +9,11 @@ breed [resources resource] ;; Un subconjunto de agentes para los recursos
 breed [abilities abilitie] ;; un subconjunto de agnetes para los skills
 
 resources-own [hp team] ;; Esta es la variable relacionada con los recursos.
-workers-own [hp team beliefs intentions incoming-queue habilidad enable tiempo recurso competencia calidad] ;; Esta es la variable relacionada con los recursos.
+workers-own [ team beliefs intentions incoming-queue habilidad enable tiempo recurso competencia calidad] ;; Esta es la variable relacionada con los recursos.
 delivers-own [hp team stock]
 abilities-own [hp team]
-administrators-own [hp team beliefs intentions incoming-queue]
-homeworks-own [hp team enable inicio tiempo recurso competencia calidad]
+administrators-own [ team beliefs intentions incoming-queue]
+homeworks-own [ team enable inicio tiempo recurso competencia calidad]
 globals [tareas ]
 to setup
   clear-all
@@ -48,7 +48,7 @@ end
 
 to go
   run-experiment
-  ask workers with [hp = 1][]
+  ask workers []
   tick
 end
 
@@ -59,6 +59,7 @@ to run-experiment
   ask get-manager [ 
     let msg create-message "request"
     set msg add-content tareas msg
+
     broadcast-to workers msg  ]
   
   ask workers [execute-intentions]
@@ -74,11 +75,11 @@ to setup-homeworks
     set color cyan
     setxy random-xcor random-ycor
     set enable 1
-    set hp random 100
-    set recurso random 100
-    set competencia random 100
-    set calidad random 100
-    set tiempo random 100
+
+    set recurso random 50
+    set competencia random 30
+    set calidad random 30
+    set tiempo random 160
     set inicio 0
   ]
   
@@ -91,7 +92,6 @@ to setup-administrators
   create-administrators 20
   [
     set color sky
-    set hp 5
     set team 3
     setxy random-xcor random-ycor
     set beliefs []
@@ -137,17 +137,16 @@ to setup-workers
   create-workers 10    ;; Toma el valor del numero de trabajadores que se quieren en el mundo 
   [
     set color 104 ;; El trabajador del equipo 1
-    set hp 10 ;; Le asigna sus hit-points
     set team 1
     set enable 1
     set beliefs []
     set intentions []
     set incoming-queue []
     add-intention "listen-to-messages" "true"
-    set recurso random 100
-    set competencia random 100
-    set calidad random 100
-    set tiempo random 100
+    set recurso random 50
+    set competencia random 30
+    set calidad random 30
+    set tiempo random 80
 
   ]
     
@@ -209,89 +208,96 @@ to evaluate-msg
   let msg 0
   let performative 0
   let list_eval []
-  let content 0
+  let list_to_team []
+  let content ""
+  let id_tarea -1
+
   
   ask administrator who [ add-intention "evaluate-msg" "true"    ]
   
   while [not empty? incoming-queue]
   [
     set msg get-message
+    
+
        
     set performative get-performative msg
-    
+        
     if performative = "inform"[      
-      set content get-content msg      
-      if content != "unavailable"[       
-       set list_eval lput msg list_eval
+      set content get-content msg 
+      
+      ifelse is-string? content and  (substring content 0 7) = "unreach"
+      [
+         set list_to_team lput msg list_to_team
+         set id_tarea read-from-string remove "unreach:" content
       ]
+     [
+         ifelse is-string? content
+         [
+         
+         ][
+           set list_eval lput msg list_eval
+         ]
+      ]
+
+
     ]
   ]
-  ifelse empty? list_eval
+  if length list_to_team > 0
   [
     ;;evaluamos la coalición
-   
+    convert-matrix list_to_team workers homework id_tarea
+
    
    ]
+  
+  if length list_eval > 0
   [
-    ;; escogemos el agente 
-     
-    let eval -1
-    let result 400
-    let idx -1
-    let temp []
-    let identi 0
-    let id_hw -1
-    let val_hw 0
-    
-    while [not empty? list_eval]
-    [
-       set temp first list_eval
-       
-       set list_eval remove temp list_eval 
-       
-       set identi read-from-string remove "sender:" item 1 temp
-       
-       set id_hw item 4 temp      
-       ;show temp
-       
-       ask homework id_hw[
-          set val_hw recurso + competencia + calidad + tiempo
-         ]
-       ask worker identi [
-        
-          set eval recurso + competencia + calidad + tiempo
-       ]
-       
-       if val_hw <= eval and eval <= result
-       [
-         set result eval
-         set idx identi
-        ]
-     ]
-        
-    if idx != -1[
-      ask worker idx [
-        set enable 0
-        ]
-      ask homework id_hw[
-        set enable 0
-        ]
-      
-      move-hw-worker id_hw idx
-    ]
+  
   ]
 end
 
 to evaluate-and-reply-cfp [msg]
-  let peso_tarea [hp] of homework get-content msg
+
+
   let id_tarea get-content msg
-  let sender  get-sender msg
+  
   let receiver who
+  let tiemp -1
+  let compet -1
+  let recurs -1
+  let calid -1
+  let replay_msg ""
+  
+  ask worker receiver [
+     set tiemp tiempo
+     set compet competencia
+     set recurs recurso
+     set calid calidad
+    ]
   
   ifelse( enable = 1)
   [
 ;;    ask administrator read-from-string sender [     add-intention "listen-to-messages" "true" ]
-    send add-content id_tarea create-reply "inform" msg
+
+;; checar si cumple con los requisitos de la tarea
+
+    ask homework id_tarea[
+      
+       ifelse tiempo <= tiemp and compet <= competencia and recurs <= recurso and calid <= calidad
+       [
+
+         ask worker receiver[
+         send add-content id_tarea create-reply "inform" msg
+         ]
+       ]
+       [
+         ask worker receiver[
+          send add-content (word "unreach:" id_tarea) create-reply "inform" msg    
+         ]
+       ]
+   ]
+
 
   ]
   [
@@ -385,7 +391,7 @@ BUTTON
 43
 go
 run-experiment
-T
+NIL
 1
 T
 OBSERVER

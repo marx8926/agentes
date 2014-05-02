@@ -1,0 +1,35 @@
+extensions [matrix]
+
+to convert-matrix[lista trabajadores tarea]
+  
+  
+  let p length lista
+  let X  matrix:make-constant p 1 0
+
+  let B  matrix:make-constant 4 1 0
+  
+  set-matrix-from-agent lista trabajadores
+  let c   extract_who_agents lista
+  
+end
+
+to set-matrix-from-agent[lista trabajadores]
+  
+    let p length lista
+    let A  matrix:make-constant 4 p 0
+    let i 0
+    
+end
+
+to-report extract_who_agents[lista]
+
+  let msg ""
+  let resultado []
+  
+  while [ not empty? lista][
+    
+    set msg first lista
+    show msg
+  ]
+  report resultado
+end

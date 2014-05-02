@@ -66,7 +66,7 @@ end
 ;; broadcasting to all agents of breed t-breed
 to broadcast-to [t-breed msg]
   foreach [who] of t-breed [
-     send add-receiver ? msg   
+     send add-receiver ? msg  
   ]
 end 
 
