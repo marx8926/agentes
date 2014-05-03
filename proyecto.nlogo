@@ -34,11 +34,12 @@ to setup-patches
   set-default-shape homeworks "box"  
   
   setup-delivers
-  setup-workers
+ 
   setup-resources
   setup-abilities
   setup-administrators
   setup-homeworks  
+  setup-workers
 
 end
 
@@ -56,9 +57,11 @@ to run-experiment
   
   get-task
   
+  output-show "Manager to task:"
   ask get-manager [ 
     let msg create-message "request"
     set msg add-content tareas msg
+     output-show who
 
     broadcast-to workers msg  ]
   
@@ -70,7 +73,12 @@ to run-experiment
 end
 
 to setup-homeworks
-  create-homeworks 20
+  
+   output-show "Homeworks"
+   let id 0
+   let temp []
+   
+  create-homeworks 10
   [
     set color cyan
     setxy random-xcor random-ycor
@@ -81,7 +89,18 @@ to setup-homeworks
     set calidad random 60
     set tiempo random 160
     set inicio 0
+    set id who
+    set temp []
+    
+    set temp lput tiempo temp
+    set temp lput recurso temp
+    set temp lput competencia temp
+    set temp lput calidad temp
+    
+    output-show temp
   ]
+  
+ 
   
   ask homeworks [ move-to one-of patches with [(pcolor = green) and (not any? homeworks-here) and (not any? resources-here) and
        (not any? abilities-here) ]]
@@ -89,7 +108,9 @@ to setup-homeworks
 end
 
 to setup-administrators
-  create-administrators 20
+ 
+  output-show "Managers"
+  create-administrators 3
   [
     set color sky
     set team 3
@@ -97,6 +118,7 @@ to setup-administrators
     set beliefs []
     set intentions []
     set incoming-queue []  
+    output-show who
     add-intention "evaluate-msg" "true"    
   ]  
   
@@ -134,6 +156,11 @@ to setup-delivers
 end
 
 to setup-workers
+  
+  let temp []
+  
+  output-show "Workers"
+  
   create-workers 10    ;; Toma el valor del numero de trabajadores que se quieren en el mundo 
   [
     set color 104 ;; El trabajador del equipo 1
@@ -147,6 +174,16 @@ to setup-workers
     set competencia random 30
     set calidad random 30
     set tiempo random 80
+    
+    set temp []
+    
+    set temp lput tiempo temp
+    set temp lput recurso temp
+    set temp lput competencia temp
+    set temp lput calidad temp
+    
+    output-show temp
+    
 
   ]
     
@@ -219,9 +256,7 @@ to evaluate-msg
   while [not empty? incoming-queue]
   [
     set msg get-message
-    
-
-       
+           
     set performative get-performative msg
         
     if performative = "inform"[      
@@ -331,10 +366,13 @@ end
 
 to get-task
   set tareas [   who ] of one-of homeworks with [enable = 1]
+ 
+  output-show (word "Task to solve:" tareas)
 
 end
 
 to-report get-manager
+ 
   report one-of administrators
 end
 
@@ -358,16 +396,17 @@ to move-hw-group [ hw lista]
     set enable 0
   ]
   
+  output-show "Workers to solve the task"
   while[not empty? lista]
   [
     set temp first lista
+    
     set lista remove-item 0 lista
     
     ask worker temp[
-      
+        output-show temp  
         set enable 0
         set coord item i indices
-        show coord
         
         set xcor xt + first coord 
         set ycor yt + last coord
@@ -590,6 +629,13 @@ show_messages
 1
 1
 -1000
+
+OUTPUT
+879
+18
+1314
+576
+11
 
 @#$#@#$#@
 ## WHAT IS IT?

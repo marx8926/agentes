@@ -76,7 +76,7 @@ to-report iteration[ A X B whos tarea]
      set flag false
    ]
    
-   if k > 2000
+   if k > 1000
    [
      set flag false 
    ]
