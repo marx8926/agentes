@@ -211,6 +211,7 @@ to evaluate-msg
   let list_to_team []
   let content ""
   let id_tarea -1
+  let team_select []
 
   
   ask administrator who [ add-intention "evaluate-msg" "true"    ]
@@ -232,29 +233,46 @@ to evaluate-msg
          set id_tarea read-from-string remove "unreach:" content
       ]
      [
-         ifelse is-string? content
-         [
          
-         ][
+         if is-number? content
+         [           
+           set id_tarea content
+           set msg add-content (word "unreach:" id_tarea) msg           
            set list_eval lput msg list_eval
          ]
+           
+         
       ]
 
 
     ]
   ]
-  if length list_to_team > 0
+  
+ ; show list_eval
+  
+  ifelse length list_eval > 0
   [
-    ;;evaluamos la coalición
-    convert-matrix list_to_team workers homework id_tarea
+    show list_eval
+    
+    set team_select solve_coalition list_eval workers homework id_tarea
+    show team_select
+    move-hw-group homework id_tarea team_select
 
-   
-   ]
-  
-  if length list_eval > 0
-  [
-  
+    
   ]
+  [
+    if length list_to_team > 0
+    [
+      ;;evaluamos la coalición
+      set team_select solve_coalition list_to_team workers homework id_tarea
+      show team_select
+      
+      move-hw-group homework id_tarea team_select
+
+    ]
+  ]
+
+  
 end
 
 to evaluate-and-reply-cfp [msg]
@@ -320,6 +338,45 @@ to-report get-manager
   report one-of administrators
 end
 
+to move-hw-group [ hw lista]
+  
+  let n length lista
+  let cnt 0
+  let i 0
+  let j 0
+  let xt 0
+  let yt 0
+  let temp 0
+  let coord []
+  let indices [
+      [-1 -1] [-1 0] [-1 1] [0 -1] [0 1] [1 -1] [1 0] [1 1]
+    ]
+  
+  ask hw[
+    set xt xcor
+    set yt ycor
+    set enable 0
+  ]
+  
+  while[not empty? lista]
+  [
+    set temp first lista
+    set lista remove-item 0 lista
+    
+    ask worker temp[
+      
+        set enable 0
+        set coord item i indices
+        show coord
+        
+        set xcor xt + first coord 
+        set ycor yt + last coord
+      ]
+    set i i + 1
+  ]
+  
+    
+end
 
 to move-hw-worker[ hw wk]
   

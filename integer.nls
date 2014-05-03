@@ -1,7 +1,7 @@
 extensions [matrix]
 __includes ["communication.nls"]
 
-to convert-matrix[lista trabajadores tarea]
+to-report solve_coalition[lista trabajadores tarea]
   
   
   let p length lista
@@ -11,11 +11,16 @@ to convert-matrix[lista trabajadores tarea]
   let list_who extract_who_agents lista  
   let A set-matrix-from-agent list_who
   show list_who
-  show B
-  iteration A X B list_who tarea
+;  show B
+  let resultado iteration A X B list_who tarea
+  let final extract_whos list_who resultado
+  show resultado
+  
+  report final
+  
 end
 
-to iteration[ A X B whos tarea]
+to-report iteration[ A X B whos tarea]
 
    let select []
    let temp []
@@ -29,9 +34,9 @@ to iteration[ A X B whos tarea]
    let p length whos
     
    set i 0
- 
+   let flag true
    
-   while [ true ]
+   while [ flag ]
    [
      set result []
      set i 0
@@ -62,22 +67,39 @@ to iteration[ A X B whos tarea]
      ]
    set pos maxima_infactibilidad A X B select result 
    set select lput pos select
-   show result
-   show select
+;   show result
+;   show select
    set t item pos result
    
    if t = 0
    [
-     stop
+     set flag false
    ]
    
    if k > 2000
    [
-     stop 
+     set flag false 
    ]
    set k k + 1
 ]
+   report select
     
+end
+
+to-report extract_whos[list_whos ids]
+  let result []
+  let temp 0
+  
+  while [not empty? ids]
+  [
+    set temp first ids
+    set ids remove-item 0 ids
+    
+    set result lput item temp list_whos result
+  ]
+  
+  report result
+  
 end
 
 to-report maxima_infactibilidad[ A X B select result ]
