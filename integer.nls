@@ -10,18 +10,149 @@ to convert-matrix[lista trabajadores tarea]
   let B  extract_req_task tarea  
   let list_who extract_who_agents lista  
   let A set-matrix-from-agent list_who
+  show list_who
+  show B
+  iteration A X B list_who tarea
+end
+
+to iteration[ A X B whos tarea]
+
+   let select []
+   let temp []
+   let result []
+   let rest_temp []
+   let t 0
+   let i 0
+   let j 0
+   let k 0
+   let pos -1
+   let p length whos
+    
+   set i 0
+ 
+   
+   while [ true ]
+   [
+     set result []
+     set i 0
+   while[ i < p][
+
+     set j 0
+     
+     while [j < p]     
+     [
+       matrix:set X j 0 0
+       set j j + 1
+     ]
+     matrix:set X i 0 1     
+     ;; ponemos los 1 guardados
+     set temp select
+     
+     while[ not empty? temp]
+     [
+       set t first temp
+       set temp remove-item 0 temp       
+       matrix:set X t 0 1
+     ]
+     
+     set rest_temp infactibilidad A X B     
+     set result lput rest_temp result     
+     set i i + 1
+     
+     ]
+   set pos maxima_infactibilidad A X B select result 
+   set select lput pos select
+   show result
+   show select
+   set t item pos result
+   
+   if t = 0
+   [
+     stop
+   ]
+   
+   if k > 2000
+   [
+     stop 
+   ]
+   set k k + 1
+]
+    
+end
+
+to-report maxima_infactibilidad[ A X B select result ]
   
-  let R  infactibilidad A X B
+  let sum_temp 0
+  let sum_tarea 0
+  let sum_max 0
+  let minimum 100000
+  let pos -1
+  let temp 0
+  let maximo max result
+  let extract 0
+  let i 0
+  
+  ;; suma de requerimientos de tarea
+  
+  set sum_tarea matrix:get B 0 0 + matrix:get B 1 0 + matrix:get B 2 0 + matrix:get B 3 0
+  
+  while[ not empty? select]
+  [
+    set temp first select
+    set select remove-item 0 select
+    
+    set sum_temp sum_temp + matrix:get A 0 temp  + matrix:get A 1 temp   + matrix:get A 2 temp   + matrix:get A 3 temp
+    
+  ]
+  
+  set i 0
+  
+  while [ not empty? result]
+  [
+    set extract first result
+    set result remove-item 0 result
+        
+    if maximo = extract
+    [
+        set sum_max matrix:get A 0 i + matrix:get A 1 i + matrix:get A 2 i + matrix:get A 3 i
+;;        show sum_temp + sum_max 
+        
+        if(sum_temp + sum_max - sum_tarea) < minimum
+        [
+          set pos i
+          set minimum sum_temp + sum_max - sum_tarea
+        ]
+    ]
+    
+    set i i + 1
+  ]
+  
+  
+  report pos
+  
 end
 
 to-report infactibilidad [A X B]
   
   let resultado  matrix:times A X
   set resultado matrix:plus resultado matrix:times-scalar B -1
+  let temp 0
+  let suma 0
+  let i 0
   
-  show resultado
-  
-  report resultado
+  while [ i < 4]
+  [
+    set temp matrix:get resultado i 0
+    
+    if temp < 0
+    [
+      set suma suma + temp
+    ]
+    
+    set i i + 1
+  ]
+
+  report suma
 end
 
 

@@ -76,9 +76,9 @@ to setup-homeworks
     setxy random-xcor random-ycor
     set enable 1
 
-    set recurso random 50
-    set competencia random 30
-    set calidad random 30
+    set recurso random 100
+    set competencia random 60
+    set calidad random 60
     set tiempo random 160
     set inicio 0
   ]
@@ -284,7 +284,7 @@ to evaluate-and-reply-cfp [msg]
 
     ask homework id_tarea[
       
-       ifelse tiempo <= tiemp and compet <= competencia and recurs <= recurso and calid <= calidad
+       ifelse tiempo <= tiemp and compet >= competencia and recurs >= recurso and calid >= calidad
        [
 
          ask worker receiver[
