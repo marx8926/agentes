@@ -1,4 +1,5 @@
 extensions [matrix]
+__includes ["communication.nls"]
 
 to convert-matrix[lista trabajadores tarea]
   
@@ -6,18 +7,49 @@ to convert-matrix[lista trabajadores tarea]
   let p length lista
   let X  matrix:make-constant p 1 0
 
-  let B  matrix:make-constant 4 1 0
+  let B  extract_req_task tarea  
+  let list_who extract_who_agents lista  
+  let A set-matrix-from-agent list_who
   
-  set-matrix-from-agent lista trabajadores
-  let c   extract_who_agents lista
-  
+  let R  infactibilidad A X B
 end
 
-to set-matrix-from-agent[lista trabajadores]
+to-report infactibilidad [A X B]
+  
+  let resultado  matrix:times A X
+  set resultado matrix:plus resultado matrix:times-scalar B -1
+  
+  show resultado
+  
+  report resultado
+end
+
+
+to-report set-matrix-from-agent[lista]
   
     let p length lista
     let A  matrix:make-constant 4 p 0
     let i 0
+    let temp 0
+    
+    while[not empty? lista]
+    [
+     set temp first lista
+     set lista remove-item 0 lista
+     
+     ask worker temp [
+      
+        matrix:set A 0 i tiempo
+        matrix:set A 1 i recurso
+        matrix:set A 2 i competencia
+        matrix:set A 3 i calidad 
+     ]
+     
+     set i i + 1
+      
+    ]
+    
+    report A
     
 end
 
@@ -29,7 +61,25 @@ to-report extract_who_agents[lista]
   while [ not empty? lista][
     
     set msg first lista
-    show msg
+    set resultado lput read-from-string get-sender msg resultado       
+    set lista remove-item 0 lista
   ]
+    
   report resultado
+end
+
+;; extract requeriments of task to vector
+
+to-report extract_req_task[tarea]
+  
+  let B  matrix:make-constant 4 1 0
+  
+  ask tarea [
+    matrix:set B 0 0 tiempo
+    matrix:set B 1 0 recurso
+    matrix:set B 2 0 competencia
+    matrix:set B 3 0 calidad
+    ]
+  
+  report B
 end
