@@ -21,7 +21,8 @@ to-report get-task
   
   ;;set tareas [   who ] of one-of homeworks with [enable = 1]
  
-  report [who] of one-of homeworks with [enable = 1]
+  let result [who] of one-of homeworks with [enable = 1]
+  report result
   
 ;;  output-show (word "Task to solve:" tareas
 
@@ -29,23 +30,8 @@ end
 
 to-report get-manager
  
-   show "antes"
-   ask administrators [
-     
-     show enable
-   ]
    
-  let result one-of administrators with [enable = 1]
-  
-  show "despues"
-  
-  ask administrators [
-     
-     show enable
-   ]
-     
-  ;;let result -1
-  
+  let result one-of administrators with [enable = 1]  
   report result
 end
 

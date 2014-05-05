@@ -43,31 +43,34 @@ to run-experiment
     
     ask admin [ ;; seleccionamos un administrador 
     ;;creamos un mensaje 
-
-
-    show enable
     
     if enable =  1 [
       
     let msg create-message "request"
     
     set tarea_actual get-task
-    set msg add-content tarea_actual msg
     
-    set tareas_asignadas lput tarea_actual tareas_asignadas
-
-    set enable 0
-    let id who
-    
-    ask homework tarea_actual [
-        output-show "Manager to task:"
-      set administrador_id id
+    if tarea_actual != nobody
+    [
+          
+      set msg add-content tarea_actual msg   
+      
+      ;; asignar una sola vez la tarea
+      if member? tarea_actual tareas_asignadas [ 
+        set tareas_asignadas lput tarea_actual tareas_asignadas
+      ]
       set enable 0
-      set finished 0
+      let id who
+    
+      ask homework tarea_actual [
+        output-show "Manager to task:"
+        set administrador_id id
+        set enable 0
+        set finished 0
+      ]
+      output-show who
+      broadcast-to workers msg ;;enviamos el mensaje por broadcast
     ]
-    output-show who
-
-    broadcast-to workers msg ;;enviamos el mensaje por broadcast
     
     ]    
   ]
@@ -78,10 +81,7 @@ to run-experiment
   ask homeworks [execute-intentions]
   
  tick
- show "terminado"
- ask administrators [
-   show enable
- ]
+
   
 end
 
@@ -146,14 +146,6 @@ to evaluate-msg
     [
       if performative = "task_worker"
       [
-        ;let id_sender read-from-string get-sender
-        show "task_worker"
-        show tarea_actual
-        show msg
-        
-        ask administrators [
-         show tarea_actual 
-        ]
         
         finish_task_worker msg
       ] 
@@ -354,8 +346,8 @@ to finish_task_worker [msg]
    
     ask homework tarea_actual[
      set finished finished + 1 
-;     show who
-;     show finished
+
+     ;;la tarea checa si ya termino
      add-intention "check_finish_task" "true"
      
     ]
@@ -395,20 +387,21 @@ end
 to finish_task_team [msg]
   
 ;  show msg
-  let id_rec read-from-string get-receivers msg
+  let id_rec read-from-string first get-receivers msg
   let id_sender read-from-string get-sender msg
   let id_tarea 0
+  show msg
   
   ;; sacamos al administrador
   
-  ask administrator id_sender
+  ask administrator id_rec
   [
-;;     set enable 1 
+     set enable 1 
      set tareas_completadas lput id_sender tareas_completadas
      
      move-to one-of patches with [(pcolor = violet) and (not any? administrators-here)]
      
-     ask homework id_rec [
+     ask homework id_sender [
        add-intention "must-die" "true"       
      ]
      
@@ -420,11 +413,11 @@ to finish_task_team [msg]
   
 end
 
-to must-ide
+to must-die
   
   ask homework who
   [
-;;    show "finished task "
+    show "finished task "
     die
   ]
 end
