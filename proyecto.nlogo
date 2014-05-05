@@ -10,12 +10,12 @@ breed [abilities abilitie] ;; un subconjunto de agnetes para los skills
 
 resources-own [hp team] ;; Esta es la variable relacionada con los recursos.
 workers-own [ team beliefs intentions incoming-queue habilidad enable tiempo recurso competencia calidad
-  tiempoA recursoA competenciaA calidadA
+  tiempoA recursoA competenciaA calidadA inicio tarea_asignada
   ] ;; Esta es la variable relacionada con los recursos.
 delivers-own [hp team stock]
 abilities-own [hp team]
-administrators-own [ team beliefs intentions incoming-queue]
-homeworks-own [ team enable inicio tiempo recurso competencia calidad]
+administrators-own [ team enable beliefs intentions incoming-queue tareas_asignadas tareas_completadas tarea_actual ]
+homeworks-own [ team enable inicio fin tiempo recurso competencia calidad list_workers finished administrador_id ]
 globals [tareas indexT ]
 
 to setup
@@ -51,12 +51,6 @@ end
 ;;; Owners Actions
 
 
-to go
-  run-experiment
-  ask workers []
-  tick
-
-end
 
 to run-experiment
   
@@ -68,6 +62,14 @@ to run-experiment
     let msg create-message "request"
     set msg add-content tareas msg
     
+    set tareas_asignadas lput tareas tareas_asignadas
+    set tarea_actual -1
+    set enable 0
+    let id who
+    
+    ask homework tareas [
+      set administrador_id id
+    ]
     output-show who
 
     broadcast-to workers msg ;;enviamos el mensaje por broadcast
@@ -77,7 +79,7 @@ to run-experiment
   ask workers [execute-intentions] ;;ejecutamos la intensión de escucha de los trabajadores
   ask administrators [execute-intentions] ;; ejecutamos la intensión de escucha de los trabajadores
   
- 
+ tick
   
 end
 
@@ -98,13 +100,16 @@ to setup-homeworks
     set calidad 1 + random 59 
     set tiempo 1 + random  159
     set inicio 0
-     set id who
+    set id who
     set temp []
     
     set temp lput tiempo temp
     set temp lput recurso temp
     set temp lput competencia temp
     set temp lput calidad temp
+    set list_workers []
+    set finished 0 ;; contador
+    set administrador_id 0
     
     output-show temp
   ]
@@ -127,6 +132,11 @@ to setup-administrators
     set beliefs []
     set intentions []
     set incoming-queue []  
+    set tareas_asignadas []
+    set tareas_completadas []
+    set tarea_actual 0
+    set enable 1
+    
     output-show who
     add-intention "evaluate-msg" "true"    
   ]  
@@ -190,7 +200,7 @@ to setup-workers
     set temp lput recurso temp
     set temp lput competencia temp
     set temp lput calidad temp
-    
+    set tarea_asignada -1
     output-show temp
     
 
@@ -242,10 +252,6 @@ to listen-to-messages
      evaluate-and-reply-cfp msg
      
      ]
-   
- ;  if performative = "cfp" [evaluate-and-reply-cfp msg] 
-  ; if performative = "accept-proposal" [plan-to-pickup-task msg stop]
-   ;if perfomsgrmative = "reject-proposal" [do-nothing]
 
 end
 
@@ -261,7 +267,7 @@ to evaluate-msg
   let distribucion []
 
   
-  ask administrator who [ add-intention "evaluate-msg" "true"    ]
+  ask administrator who [ add-intention "evaluate-msg" "true"    
   
   while [not empty? incoming-queue]
   [
@@ -269,7 +275,7 @@ to evaluate-msg
            
     set performative get-performative msg
         
-    if performative = "inform"[      
+    ifelse performative = "inform"[      
       set content get-content msg 
       
       ifelse is-string? content and  (substring content 0 7) = "unreach"
@@ -291,30 +297,62 @@ to evaluate-msg
 
 
     ]
+    [
+      if performative = "task_worker"
+      [
+        finish_task_worker msg
+      ] 
+      
+      if performative = "task_team"
+      [
+        
+      ]
+    ]
   ]
   
- ; show list_eval
+  ]
   
   set indexT indexT + 1
   
   ifelse length list_eval > 0
   [
-    show list_eval
+;    show list_eval
     
     set team_select solve_coalition list_eval workers homework id_tarea
     
-    if length team_select > 0
+    ifelse length team_select > 0
     [
+          
+      set distribucion distribute_tasks  team_select homework id_tarea 
+      set_agents_features  team_select distribucion id_tarea
+      
       move-hw-manager id_tarea who 
       move-hw-group homework id_tarea team_select
-    
-      set distribucion distribute_tasks  team_select homework id_tarea 
-      set_agents_features  team_select distribucion
+      
+      ask homework id_tarea
+      [
+
+        set list_workers team_select
+        set finished 0
+      ]
+      
+      ask administrator who
+      [
+        set tarea_actual id_tarea
+        set enable 0
+       
+      ]
       ;;    set member_teams lput length team_select member_teams
     ]
-    set-current-plot "Tasks vs #Agents"
-    plotxy indexT length team_select
-
+    [
+      ask administrator who [
+        set enable 1 
+      ] 
+    ]
+      set-current-plot "Tasks vs #Agents"
+      plotxy indexT length team_select
+    
+    
     
   ]
   [
@@ -325,19 +363,31 @@ to evaluate-msg
 
       if length team_select > 0
       [
-        move-hw-manager id_tarea who 
-        move-hw-group homework id_tarea team_select
+       
       
         set distribucion distribute_tasks  team_select homework id_tarea 
-        set_agents_features  team_select distribucion  
+        set_agents_features  team_select distribucion id_tarea 
+        
+        move-hw-manager id_tarea who 
+        move-hw-group homework id_tarea team_select
+        
+        ask administrator who
+        [
+          set enable 0
+        ]
       ] 
-              
+          
+     
+      
+                    
       set-current-plot "Tasks vs #Agents"
       plotxy indexT length team_select
 ;;      set member_teams lput length team_select member_teams
     ]
-    [
-      
+    [      
+       ask administrator who [
+        set enable 1
+      ] 
           set-current-plot "Tasks vs #Agents"
           plotxy indexT 0
     ]
@@ -396,7 +446,47 @@ to evaluate-and-reply-cfp [msg]
   
 end
 
-to plan-to-pickup-task [msg]
+to finish_task_worker [msg]
+
+  let id_sender read-from-string get-sender msg
+  
+  ask administrator who
+  [
+    
+    ask homework tarea_actual[
+     set finished finished + 1 
+     
+     add-intention "check_finish_task" "true"
+    ]
+    
+    
+  ]
+  
+  ask worker id_sender[
+
+  ]
+
+end 
+
+to check_finish_task
+  
+  if finished = length list_workers
+  [
+   
+    let msg create-message "task_team"
+    set msg add-content "finish" msg
+    
+    ask homework who[
+     set fin ticks
+     set msg add-receiver administrador_id msg     
+     send msg
+    ]
+  ]
+end
+
+to finish_task_team [msg]
+  
+  let id_sender get-sender msg
   
 end
 
@@ -409,7 +499,7 @@ end
 
 to-report get-manager
  
-  report one-of administrators
+  report one-of administrators with [enable = 1]
 end
 
 to move-hw-group [ hw lista]
@@ -438,15 +528,24 @@ to move-hw-group [ hw lista]
     set temp first lista
     
     set lista remove-item 0 lista
+    let feat []
     
     ask worker temp[
-        output-show temp  
+        
         set enable 0
         set coord item i indices
         
         set xcor xt + first coord 
         set ycor yt + last coord
+        
+        set feat lput tiempoA feat
+        set feat lput recursoA feat
+        set feat lput competenciaA feat
+        set feat lput calidadA feat
+         output-show feat
+        
       ]
+   
     set i i + 1
   ]
   
@@ -493,8 +592,8 @@ GRAPHICS-WINDOW
 17
 -17
 17
-0
-0
+1
+1
 1
 ticks
 30.0
@@ -523,7 +622,7 @@ BUTTON
 43
 go
 run-experiment
-T
+NIL
 1
 T
 OBSERVER
@@ -531,7 +630,7 @@ NIL
 NIL
 NIL
 NIL
-1
+0
 
 SLIDER
 30

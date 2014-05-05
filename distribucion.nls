@@ -1,3 +1,5 @@
+__includes ["bdi.nls" "communication.nls"]
+
 to-report distribute_tasks[ list_id_agents tarea ]
   
   let timeT 0
@@ -121,7 +123,7 @@ to-report distribuye [ data total ]
   report result
 end
 
-to set_agents_features [list_id features]
+to set_agents_features [list_id features id_tarea]
   
   let tiem item 0 features
   let res item 1 features
@@ -140,15 +142,51 @@ to set_agents_features [list_id features]
       set recursoA item i res
       set competenciaA item i ski
       set calidadA item i qua
+      set inicio ticks
+      set tarea_asignada id_tarea
       
      ; show tiempoA
 ;      show recursoA
  ;     show competenciaA
   ;    show calidadA
+     add-intention "execute-task-worker" "true"    
     ]
     
     set i i + 1
     
   ]
   
+end
+
+to execute-task-worker
+  
+  ;ask workers with [team = 1] [move-to one-of patches with [(pcolor = red) and (not any? workers-here)]]
+  ask worker who
+  [
+    ifelse  ticks <= (inicio + tiempoA)
+    [
+       add-intention "execute-task-worker" "true"
+    ]
+    [
+      
+      ;;enviar mensaje de termino
+      
+      let msg create-message "task_worker"
+      set msg add-content "finish" msg
+      let manager_id 0
+      
+      ask homework tarea_asignada
+      [
+        set manager_id administrador_id
+      ]
+      
+      set msg add-receiver manager_id msg
+      
+      
+      send msg
+    
+      ;; regresar a la zona
+      move-to one-of patches with [(pcolor = red) and (not any? workers-here)]
+    ]
+  ]
 end
