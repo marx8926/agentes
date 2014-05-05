@@ -1,0 +1,101 @@
+to move-hw-manager[ hw mng]
+  
+  let yc 0
+  let xc 0
+  
+  ask homework hw[
+    set yc ycor
+    set xc xcor
+    ]
+  
+  ask administrator mng [    
+    set xcor xc - 1 
+    set ycor yc - 1
+    ]
+  
+ 
+end
+
+
+to-report get-task
+  
+  ;;set tareas [   who ] of one-of homeworks with [enable = 1]
+ 
+  report [who] of one-of homeworks with [enable = 1]
+  
+;;  output-show (word "Task to solve:" tareas
+
+end
+
+to-report get-manager
+ 
+   show "antes"
+   ask administrators [
+     
+     show enable
+   ]
+   
+  let result one-of administrators with [enable = 1]
+  
+  show "despues"
+  
+  ask administrators [
+     
+     show enable
+   ]
+     
+  ;;let result -1
+  
+  report result
+end
+
+to move-hw-group [ hw lista]
+  
+  let n length lista
+  let cnt 0
+  let i 0
+  let j 0
+  let xt 0
+  let yt 0
+  let temp 0
+  let coord []
+  let indices [
+      [-1 0] [-1 1] [0 -1] [0 1] [1 -1] [1 0] [1 1]
+    ]
+  
+  ask hw[
+    set xt xcor
+    set yt ycor
+    set enable 0
+  ]
+  
+  output-show "Workers to solve the task"
+  while[not empty? lista]
+  [
+    set temp first lista
+    
+    set lista remove-item 0 lista
+    let feat []
+    
+    ask worker temp[
+        
+        set enable 0
+        set coord item i indices
+        
+        set xcor xt + first coord 
+        set ycor yt + last coord
+        
+        set feat lput tiempoA feat
+        set feat lput recursoA feat
+        set feat lput competenciaA feat
+        set feat lput calidadA feat
+         output-show feat
+        
+      ]
+   
+    set i i + 1
+  ]
+  
+    
+end
+

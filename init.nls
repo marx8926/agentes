@@ -1,0 +1,186 @@
+
+to setup-patches 
+  ask patches [ set pcolor green ]  ;; Todos de color verde (pasto)
+  
+  set-default-shape administrators "wolf" ;; Los administradores tienen forma de lobos 
+  set-default-shape delivers "flag" ;; puntos medios de las zonas
+  set-default-shape workers "person" ;; trabajores tienen forma de personas 
+  set-default-shape resources "tree" ;; zona de recursos con forma de arbol
+  set-default-shape abilities "star" ;; zona de skils con forma de estrella
+  set-default-shape homeworks "box"  ;; tareas con forma de caja
+  
+  setup-delivers
+ 
+  setup-resources
+  setup-abilities
+  setup-administrators
+  setup-homeworks  
+  setup-workers
+
+end
+
+
+to setup-homeworks
+  
+   output-show "Homeworks"
+   let id 0
+   let temp []
+   
+  create-homeworks 10
+  [
+    set color cyan
+    setxy random-xcor random-ycor
+    set enable 1
+
+    set recurso 1 +  random 99
+    set competencia 1 + random 59
+    set calidad 1 + random 59 
+    set tiempo 1 + random  159
+    set inicio 0
+    set id who
+    set temp []
+    set beliefs []
+    set intentions []
+    set incoming-queue []
+    
+    set temp lput tiempo temp
+    set temp lput recurso temp
+    set temp lput competencia temp
+    set temp lput calidad temp
+    set list_workers []
+    set finished 0 ;; contador
+    set administrador_id 0
+    set enable 1
+;;    add-intention "check_finish_task" "true"
+    output-show temp
+  ]
+  
+ 
+  
+  ask homeworks [ move-to one-of patches with [(pcolor = green) and (not any? homeworks-here) and (not any? resources-here) and
+       (not any? abilities-here) ]]
+  
+end
+
+
+
+
+to setup-administrators
+ 
+  output-show "Managers"
+  create-administrators 3
+  [
+    set color sky
+    set team 3
+    setxy random-xcor random-ycor
+    set beliefs []
+    set intentions []
+    set incoming-queue []  
+    set tareas_asignadas []
+    set tareas_completadas []
+    set tarea_actual 0
+    set enable 1
+    
+    output-show who
+    add-intention "evaluate-msg" "true"    
+  ]  
+  
+;  ask administrators with [team = 3][ move-to one-of patches with [(pcolor = brown) and (not any? administrators-here)]]
+
+   ask administrators with [team = 3][ move-to one-of patches with [(pcolor = violet) and (not any? administrators-here)] ]
+   
+end
+
+
+to setup-delivers
+ 
+    
+   create-delivers 1 ;; Crea el primer castillo, lo pone en una esquina e inicializa sus variables
+  [
+    set color red ;; El color de su equipo
+    setxy (min-pxcor + 5) (max-pycor + 5) ;; Las coordenadas del castillo
+    set hp 10 ;; Los hit-points del castillo
+    set team 2 ;; Equipo 1
+  ] 
+  
+   create-delivers 1 ;; Crea el primer castillo, lo pone en una esquina e inicializa sus variables
+  [
+    set color violet ;; El color de su equipo
+    setxy (min-pxcor - 5) (max-pycor + 5) ;; Las coordenadas del castillo
+    set hp 10 ;; Los hit-points del castillo
+    set team 3 ;; Equipo 1
+  ]  
+  
+  ;; Colorea los patches alrededor de los castillos
+  ask delivers [if team = 2 [ask patches in-radius 3 [set pcolor red]] ] 
+  ask delivers [if team = 3 [ask patches in-radius 3 [set pcolor violet]] ] 
+  ask delivers [set pcolor white]
+;  ask delivers [ifelse team = 1 [ask neighbors [set pcolor 107]] [ask neighbors [set pcolor 17]]] 
+    
+end
+
+
+
+to setup-workers
+  
+  let temp []
+  
+  output-show "Workers"
+  
+  create-workers 10    ;; Toma el valor del numero de trabajadores que se quieren en el mundo 
+  [
+    set color 104 ;; El trabajador del equipo 1
+    set team 1
+    set enable 1
+    set beliefs []
+    set intentions []
+    set incoming-queue []
+    add-intention "listen-to-messages" "true"
+    set recurso 1 + random 49
+    set competencia 1 + random 29
+    set calidad 1 + random 29
+    set tiempo 1 + random 79
+    
+    set temp []
+    
+    set temp lput tiempo temp
+    set temp lput recurso temp
+    set temp lput competencia temp
+    set temp lput calidad temp
+    set tarea_asignada -1
+    output-show temp
+    
+
+  ]
+    
+  ask workers with [team = 1] [move-to one-of patches with [(pcolor = red) and (not any? workers-here)]]  ;; Coloca el trabajador cerca 
+
+ 
+end
+  
+to setup-resources
+  create-resources 1 ;; Creara la cantidad de recursos especificados e inicializara sus variables
+  [
+    set color yellow ;; El color del recurso
+    set hp 5 ;; Cuantos recursos tiene cada fuente
+    set team 0  ;; Pertenece a ningun equipo
+    set size 4
+    setxy (min-pxcor + 5) (max-pycor - 5) 
+  ]
+  
+;;  ask resources with [team = 0] [move-to one-of patches with [(pcolor = blue) and (not any? resources-here)]] ;;
+  
+end
+
+to setup-abilities
+  create-abilities 1
+  [
+    set color lime
+    set hp 5
+    set team 2
+    set size 4
+    setxy (max-pxcor - 5) (max-pycor - 5)
+    
+  ]  
+end
+

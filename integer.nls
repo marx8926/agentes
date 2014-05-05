@@ -12,7 +12,7 @@ to-report solve_coalition[lista trabajadores tarea]
   let A set-matrix-from-agent list_who
   let flag possible list_who tarea
   
-  show list_who
+;  show list_who
   
   if flag = false
   [

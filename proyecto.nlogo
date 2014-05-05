@@ -1,4 +1,4 @@
-__includes ["bdi.nls" "communication.nls" "integer.nls" "distribucion.nls"]
+__includes [ "init.nls" "tools.nls" "bdi.nls" "communication.nls" "integer.nls" "distribucion.nls"]
 
 breed [administrators administrator] ;; managers
 breed [delivers deliver] ;; admin
@@ -15,7 +15,7 @@ workers-own [ team beliefs intentions incoming-queue habilidad enable tiempo rec
 delivers-own [hp team stock]
 abilities-own [hp team]
 administrators-own [ team enable beliefs intentions incoming-queue tareas_asignadas tareas_completadas tarea_actual ]
-homeworks-own [ team enable inicio fin tiempo recurso competencia calidad list_workers finished administrador_id ]
+homeworks-own [ team enable beliefs intentions incoming-queue inicio fin tiempo recurso competencia calidad list_workers finished administrador_id ]
 globals [tareas indexT ]
 
 to setup
@@ -26,27 +26,6 @@ to setup
 end
 
 
-
-to setup-patches 
-  ask patches [ set pcolor green ]  ;; Todos de color verde (pasto)
-  
-  set-default-shape administrators "wolf" ;; Los administradores tienen forma de lobos 
-  set-default-shape delivers "flag" ;; puntos medios de las zonas
-  set-default-shape workers "person" ;; trabajores tienen forma de personas 
-  set-default-shape resources "tree" ;; zona de recursos con forma de arbol
-  set-default-shape abilities "star" ;; zona de skils con forma de estrella
-  set-default-shape homeworks "box"  ;; tareas con forma de caja
-  
-  setup-delivers
- 
-  setup-resources
-  setup-abilities
-  setup-administrators
-  setup-homeworks  
-  setup-workers
-
-end
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Owners Actions
 
@@ -54,188 +33,58 @@ end
 
 to run-experiment
   
-  get-task
-    show ticks
-  output-show "Manager to task:"
-  ask get-manager [ ;; seleccionamos un administrador 
-    ;;creamos un mensaje 
-    let msg create-message "request"
-    set msg add-content tareas msg
+  
+;    show ticks
+
+  let admin get-manager
+  
+  if admin != nobody
+  [
     
-    set tareas_asignadas lput tareas tareas_asignadas
-    set tarea_actual -1
+    ask admin [ ;; seleccionamos un administrador 
+    ;;creamos un mensaje 
+
+
+    show enable
+    
+    if enable =  1 [
+      
+    let msg create-message "request"
+    
+    set tarea_actual get-task
+    set msg add-content tarea_actual msg
+    
+    set tareas_asignadas lput tarea_actual tareas_asignadas
+
     set enable 0
     let id who
     
-    ask homework tareas [
+    ask homework tarea_actual [
+        output-show "Manager to task:"
       set administrador_id id
+      set enable 0
+      set finished 0
     ]
     output-show who
 
     broadcast-to workers msg ;;enviamos el mensaje por broadcast
     
+    ]    
   ]
-  
+    
+  ]
   ask workers [execute-intentions] ;;ejecutamos la intensión de escucha de los trabajadores
   ask administrators [execute-intentions] ;; ejecutamos la intensión de escucha de los trabajadores
+  ask homeworks [execute-intentions]
   
  tick
+ show "terminado"
+ ask administrators [
+   show enable
+ ]
   
 end
 
-to setup-homeworks
-  
-   output-show "Homeworks"
-   let id 0
-   let temp []
-   
-  create-homeworks 10
-  [
-    set color cyan
-    setxy random-xcor random-ycor
-    set enable 1
-
-    set recurso 1 +  random 99
-    set competencia 1 + random 59
-    set calidad 1 + random 59 
-    set tiempo 1 + random  159
-    set inicio 0
-    set id who
-    set temp []
-    
-    set temp lput tiempo temp
-    set temp lput recurso temp
-    set temp lput competencia temp
-    set temp lput calidad temp
-    set list_workers []
-    set finished 0 ;; contador
-    set administrador_id 0
-    
-    output-show temp
-  ]
-  
- 
-  
-  ask homeworks [ move-to one-of patches with [(pcolor = green) and (not any? homeworks-here) and (not any? resources-here) and
-       (not any? abilities-here) ]]
-  
-end
-
-to setup-administrators
- 
-  output-show "Managers"
-  create-administrators 3
-  [
-    set color sky
-    set team 3
-    setxy random-xcor random-ycor
-    set beliefs []
-    set intentions []
-    set incoming-queue []  
-    set tareas_asignadas []
-    set tareas_completadas []
-    set tarea_actual 0
-    set enable 1
-    
-    output-show who
-    add-intention "evaluate-msg" "true"    
-  ]  
-  
-;  ask administrators with [team = 3][ move-to one-of patches with [(pcolor = brown) and (not any? administrators-here)]]
-
-   ask administrators with [team = 3][ move-to one-of patches with [(pcolor = violet) and (not any? administrators-here)]]
-   
-end
-
-to setup-delivers
- 
-    
-   create-delivers 1 ;; Crea el primer castillo, lo pone en una esquina e inicializa sus variables
-  [
-    set color red ;; El color de su equipo
-    setxy (min-pxcor + 5) (max-pycor + 5) ;; Las coordenadas del castillo
-    set hp 10 ;; Los hit-points del castillo
-    set team 2 ;; Equipo 1
-  ] 
-  
-   create-delivers 1 ;; Crea el primer castillo, lo pone en una esquina e inicializa sus variables
-  [
-    set color violet ;; El color de su equipo
-    setxy (min-pxcor - 5) (max-pycor + 5) ;; Las coordenadas del castillo
-    set hp 10 ;; Los hit-points del castillo
-    set team 3 ;; Equipo 1
-  ]  
-  
-  ;; Colorea los patches alrededor de los castillos
-  ask delivers [if team = 2 [ask patches in-radius 3 [set pcolor red]] ] 
-  ask delivers [if team = 3 [ask patches in-radius 3 [set pcolor violet]] ] 
-  ask delivers [set pcolor white]
-;  ask delivers [ifelse team = 1 [ask neighbors [set pcolor 107]] [ask neighbors [set pcolor 17]]] 
-    
-end
-
-to setup-workers
-  
-  let temp []
-  
-  output-show "Workers"
-  
-  create-workers 10    ;; Toma el valor del numero de trabajadores que se quieren en el mundo 
-  [
-    set color 104 ;; El trabajador del equipo 1
-    set team 1
-    set enable 1
-    set beliefs []
-    set intentions []
-    set incoming-queue []
-    add-intention "listen-to-messages" "true"
-    set recurso 1 + random 49
-    set competencia 1 + random 29
-    set calidad 1 + random 29
-    set tiempo 1 + random 79
-    
-    set temp []
-    
-    set temp lput tiempo temp
-    set temp lput recurso temp
-    set temp lput competencia temp
-    set temp lput calidad temp
-    set tarea_asignada -1
-    output-show temp
-    
-
-  ]
-    
-  ask workers with [team = 1] [move-to one-of patches with [(pcolor = red) and (not any? workers-here)]]  ;; Coloca el trabajador cerca 
-
- 
-end
-  
-to setup-resources
-  create-resources 1 ;; Creara la cantidad de recursos especificados e inicializara sus variables
-  [
-    set color yellow ;; El color del recurso
-    set hp 5 ;; Cuantos recursos tiene cada fuente
-    set team 0  ;; Pertenece a ningun equipo
-    set size 4
-    setxy (min-pxcor + 5) (max-pycor - 5) 
-  ]
-  
-;;  ask resources with [team = 0] [move-to one-of patches with [(pcolor = blue) and (not any? resources-here)]] ;;
-  
-end
-
-to setup-abilities
-  create-abilities 1
-  [
-    set color lime
-    set hp 5
-    set team 2
-    set size 4
-    setxy (max-pxcor - 5) (max-pycor - 5)
-    
-  ]  
-end
 
 
 to listen-to-messages
@@ -249,8 +98,7 @@ to listen-to-messages
      ]
    
    if performative = "request" [
-     evaluate-and-reply-cfp msg
-     
+     evaluate-and-reply-cfp msg     
      ]
 
 end
@@ -271,10 +119,10 @@ to evaluate-msg
   
   while [not empty? incoming-queue]
   [
-    set msg get-message
-           
+       
+    set msg get-message           
     set performative get-performative msg
-        
+            
     ifelse performative = "inform"[      
       set content get-content msg 
       
@@ -290,9 +138,7 @@ to evaluate-msg
            set id_tarea content
            set msg add-content (word "unreach:" id_tarea) msg           
            set list_eval lput msg list_eval
-         ]
-           
-         
+         ]                    
       ]
 
 
@@ -300,12 +146,21 @@ to evaluate-msg
     [
       if performative = "task_worker"
       [
+        ;let id_sender read-from-string get-sender
+        show "task_worker"
+        show tarea_actual
+        show msg
+        
+        ask administrators [
+         show tarea_actual 
+        ]
+        
         finish_task_worker msg
       ] 
       
       if performative = "task_team"
       [
-        
+        finish_task_team msg
       ]
     ]
   ]
@@ -319,6 +174,10 @@ to evaluate-msg
 ;    show list_eval
     
     set team_select solve_coalition list_eval workers homework id_tarea
+   
+     ask administrators [
+       ;  show tarea_actual 
+        ]
     
     ifelse length team_select > 0
     [
@@ -330,10 +189,13 @@ to evaluate-msg
       move-hw-group homework id_tarea team_select
       
       ask homework id_tarea
-      [
+     [
 
         set list_workers team_select
+       ; show "workers"
+;        show list_workers
         set finished 0
+;        set enable 0
       ]
       
       ask administrator who
@@ -345,8 +207,16 @@ to evaluate-msg
       ;;    set member_teams lput length team_select member_teams
     ]
     [
+      
+         ask homework id_tarea
+         [
+
+           set finished 0
+     ;      set enable 1
+         ]
+    
       ask administrator who [
-        set enable 1 
+      ;  set enable 1 
       ] 
     ]
       set-current-plot "Tasks vs #Agents"
@@ -360,22 +230,51 @@ to evaluate-msg
     [
       ;;evaluamos la coalición
       set team_select solve_coalition list_to_team workers homework id_tarea
-
-      if length team_select > 0
+      
+      ask administrators [
+        ; show tarea_actual 
+        ]
+ 
+      ifelse length team_select > 0
       [
        
       
+       ask homework id_tarea
+       [
+
+        set list_workers team_select
+;        show "workers"
+;        show list_workers
+        set finished 0
+        set enable 0
+       ]
         set distribucion distribute_tasks  team_select homework id_tarea 
         set_agents_features  team_select distribucion id_tarea 
         
         move-hw-manager id_tarea who 
         move-hw-group homework id_tarea team_select
         
+      
+        
         ask administrator who
         [
           set enable 0
         ]
       ] 
+      [
+        
+         ask homework id_tarea
+         [
+
+           set finished 0
+           set enable 1
+         ]
+         
+        ask administrator who 
+        [
+        ;  set enable 1
+        ]
+      ]
           
      
       
@@ -386,7 +285,7 @@ to evaluate-msg
     ]
     [      
        ask administrator who [
-        set enable 1
+       ; set enable 1
       ] 
           set-current-plot "Tasks vs #Agents"
           plotxy indexT 0
@@ -452,11 +351,13 @@ to finish_task_worker [msg]
   
   ask administrator who
   [
-    
+   
     ask homework tarea_actual[
      set finished finished + 1 
-     
+;     show who
+;     show finished
      add-intention "check_finish_task" "true"
+     
     ]
     
     
@@ -470,105 +371,62 @@ end
 
 to check_finish_task
   
-  if finished = length list_workers
+  ask homework who [
+  
+;;  show "check"
+;;  show list_workers
+;;  show finished
+
+  
+  if not empty? list_workers and finished  = length list_workers
   [
    
     let msg create-message "task_team"
     set msg add-content "finish" msg
+        
+    set fin ticks
+    set msg add-receiver administrador_id msg        
+    send msg
     
-    ask homework who[
-     set fin ticks
-     set msg add-receiver administrador_id msg     
-     send msg
-    ]
+  ]
   ]
 end
 
 to finish_task_team [msg]
   
-  let id_sender get-sender msg
+;  show msg
+  let id_rec read-from-string get-receivers msg
+  let id_sender read-from-string get-sender msg
+  let id_tarea 0
   
-end
-
-to get-task
-  set tareas [   who ] of one-of homeworks with [enable = 1]
- 
-  output-show (word "Task to solve:" tareas)
-
-end
-
-to-report get-manager
- 
-  report one-of administrators with [enable = 1]
-end
-
-to move-hw-group [ hw lista]
+  ;; sacamos al administrador
   
-  let n length lista
-  let cnt 0
-  let i 0
-  let j 0
-  let xt 0
-  let yt 0
-  let temp 0
-  let coord []
-  let indices [
-      [-1 0] [-1 1] [0 -1] [0 1] [1 -1] [1 0] [1 1]
-    ]
-  
-  ask hw[
-    set xt xcor
-    set yt ycor
-    set enable 0
-  ]
-  
-  output-show "Workers to solve the task"
-  while[not empty? lista]
+  ask administrator id_sender
   [
-    set temp first lista
-    
-    set lista remove-item 0 lista
-    let feat []
-    
-    ask worker temp[
-        
-        set enable 0
-        set coord item i indices
-        
-        set xcor xt + first coord 
-        set ycor yt + last coord
-        
-        set feat lput tiempoA feat
-        set feat lput recursoA feat
-        set feat lput competenciaA feat
-        set feat lput calidadA feat
-         output-show feat
-        
-      ]
-   
-    set i i + 1
+;;     set enable 1 
+     set tareas_completadas lput id_sender tareas_completadas
+     
+     move-to one-of patches with [(pcolor = violet) and (not any? administrators-here)]
+     
+     ask homework id_rec [
+       add-intention "must-die" "true"       
+     ]
+     
   ]
   
-    
+  ;; enviamos un mensaje de fin a la tarea para su destrucción
+  
+  
+  
 end
 
-to move-hw-manager[ hw mng]
+to must-ide
   
-  let yc 0
-  let xc 0
-  
-  ask homework hw[
-    set yc ycor
-    set xc xcor
-    ]
-  
-  ask administrator mng [    
-    set xcor xc - 1 
-    set ycor yc - 1
-    ]
-  
-  show ticks
-  
+  ask homework who
+  [
+;;    show "finished task "
+    die
+  ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW

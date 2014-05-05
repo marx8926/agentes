@@ -182,6 +182,7 @@ to execute-task-worker
       
       set msg add-receiver manager_id msg
       
+      show msg
       
       send msg
     
