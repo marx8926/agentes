@@ -1,4 +1,4 @@
-__includes ["bdi.nls" "communication.nls" "integer.nls"]
+__includes ["bdi.nls" "communication.nls" "integer.nls" "distribucion.nls"]
 
 breed [administrators administrator] ;; managers
 breed [delivers deliver] ;; admin
@@ -9,13 +9,17 @@ breed [resources resource] ;; Un subconjunto de agentes para los recursos
 breed [abilities abilitie] ;; un subconjunto de agnetes para los skills
 
 resources-own [hp team] ;; Esta es la variable relacionada con los recursos.
-workers-own [ team beliefs intentions incoming-queue habilidad enable tiempo recurso competencia calidad] ;; Esta es la variable relacionada con los recursos.
+workers-own [ team beliefs intentions incoming-queue habilidad enable tiempo recurso competencia calidad
+  tiempoA recursoA competenciaA calidadA
+  ] ;; Esta es la variable relacionada con los recursos.
 delivers-own [hp team stock]
 abilities-own [hp team]
 administrators-own [ team beliefs intentions incoming-queue]
 homeworks-own [ team enable inicio tiempo recurso competencia calidad]
-globals [tareas ]
+globals [tareas indexT ]
+
 to setup
+  set indexT 0
   clear-all
   setup-patches
   reset-ticks
@@ -26,12 +30,12 @@ end
 to setup-patches 
   ask patches [ set pcolor green ]  ;; Todos de color verde (pasto)
   
-  set-default-shape administrators "wolf" ;; Los samurais se mostraran como flechas  
-  set-default-shape delivers "flag" ;; Los "castillos" se mostraran como banderas
-  set-default-shape workers "person" ;; Los recursos se veran como estrellas  
-  set-default-shape resources "tree"  
-  set-default-shape abilities "star"  
-  set-default-shape homeworks "box"  
+  set-default-shape administrators "wolf" ;; Los administradores tienen forma de lobos 
+  set-default-shape delivers "flag" ;; puntos medios de las zonas
+  set-default-shape workers "person" ;; trabajores tienen forma de personas 
+  set-default-shape resources "tree" ;; zona de recursos con forma de arbol
+  set-default-shape abilities "star" ;; zona de skils con forma de estrella
+  set-default-shape homeworks "box"  ;; tareas con forma de caja
   
   setup-delivers
  
@@ -51,22 +55,27 @@ to go
   run-experiment
   ask workers []
   tick
+
 end
 
 to run-experiment
   
   get-task
-  
+    show ticks
   output-show "Manager to task:"
-  ask get-manager [ 
+  ask get-manager [ ;; seleccionamos un administrador 
+    ;;creamos un mensaje 
     let msg create-message "request"
     set msg add-content tareas msg
-     output-show who
+    
+    output-show who
 
-    broadcast-to workers msg  ]
+    broadcast-to workers msg ;;enviamos el mensaje por broadcast
+    
+  ]
   
-  ask workers [execute-intentions]
-  ask administrators [execute-intentions]
+  ask workers [execute-intentions] ;;ejecutamos la intensión de escucha de los trabajadores
+  ask administrators [execute-intentions] ;; ejecutamos la intensión de escucha de los trabajadores
   
  
   
@@ -84,12 +93,12 @@ to setup-homeworks
     setxy random-xcor random-ycor
     set enable 1
 
-    set recurso random 100
-    set competencia random 60
-    set calidad random 60
-    set tiempo random 160
+    set recurso 1 +  random 99
+    set competencia 1 + random 59
+    set calidad 1 + random 59 
+    set tiempo 1 + random  159
     set inicio 0
-    set id who
+     set id who
     set temp []
     
     set temp lput tiempo temp
@@ -170,10 +179,10 @@ to setup-workers
     set intentions []
     set incoming-queue []
     add-intention "listen-to-messages" "true"
-    set recurso random 50
-    set competencia random 30
-    set calidad random 30
-    set tiempo random 80
+    set recurso 1 + random 49
+    set competencia 1 + random 29
+    set calidad 1 + random 29
+    set tiempo 1 + random 79
     
     set temp []
     
@@ -249,6 +258,7 @@ to evaluate-msg
   let content ""
   let id_tarea -1
   let team_select []
+  let distribucion []
 
   
   ask administrator who [ add-intention "evaluate-msg" "true"    ]
@@ -285,25 +295,51 @@ to evaluate-msg
   
  ; show list_eval
   
+  set indexT indexT + 1
+  
   ifelse length list_eval > 0
   [
     show list_eval
     
     set team_select solve_coalition list_eval workers homework id_tarea
-    show team_select
-    move-hw-group homework id_tarea team_select
+    
+    if length team_select > 0
+    [
+      move-hw-manager id_tarea who 
+      move-hw-group homework id_tarea team_select
+    
+      set distribucion distribute_tasks  team_select homework id_tarea 
+      set_agents_features  team_select distribucion
+      ;;    set member_teams lput length team_select member_teams
+    ]
+    set-current-plot "Tasks vs #Agents"
+    plotxy indexT length team_select
 
     
   ]
   [
-    if length list_to_team > 0
+    ifelse length list_to_team > 0
     [
       ;;evaluamos la coalición
       set team_select solve_coalition list_to_team workers homework id_tarea
-      show team_select
-      
-      move-hw-group homework id_tarea team_select
 
+      if length team_select > 0
+      [
+        move-hw-manager id_tarea who 
+        move-hw-group homework id_tarea team_select
+      
+        set distribucion distribute_tasks  team_select homework id_tarea 
+        set_agents_features  team_select distribucion  
+      ] 
+              
+      set-current-plot "Tasks vs #Agents"
+      plotxy indexT length team_select
+;;      set member_teams lput length team_select member_teams
+    ]
+    [
+      
+          set-current-plot "Tasks vs #Agents"
+          plotxy indexT 0
     ]
   ]
 
@@ -387,7 +423,7 @@ to move-hw-group [ hw lista]
   let temp 0
   let coord []
   let indices [
-      [-1 -1] [-1 0] [-1 1] [0 -1] [0 1] [1 -1] [1 0] [1 1]
+      [-1 0] [-1 1] [0 -1] [0 1] [1 -1] [1 0] [1 1]
     ]
   
   ask hw[
@@ -417,7 +453,7 @@ to move-hw-group [ hw lista]
     
 end
 
-to move-hw-worker[ hw wk]
+to move-hw-manager[ hw mng]
   
   let yc 0
   let xc 0
@@ -427,9 +463,9 @@ to move-hw-worker[ hw wk]
     set xc xcor
     ]
   
-  ask worker wk [    
-    set xcor xc + 1
-    set ycor yc + 1
+  ask administrator mng [    
+    set xcor xc - 1 
+    set ycor yc - 1
     ]
   
   show ticks
@@ -487,7 +523,7 @@ BUTTON
 43
 go
 run-experiment
-NIL
+T
 1
 T
 OBSERVER
@@ -584,13 +620,13 @@ NIL
 VERTICAL
 
 PLOT
-14
-267
-214
-417
-plot 1
-NIL
-NIL
+23
+281
+279
+464
+Tasks vs #Agents
+Number of task
+Number of agent to solve
 0.0
 10.0
 0.0
@@ -599,25 +635,7 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot count turtles"
-
-PLOT
-17
-455
-217
-605
-plot 2
-NIL
-NIL
-0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -16777216 true "" "plot count turtles"
+"default" 1.0 0 -16777216 true "" ""
 
 SWITCH
 145

@@ -10,11 +10,19 @@ to-report solve_coalition[lista trabajadores tarea]
   let B  extract_req_task tarea  
   let list_who extract_who_agents lista  
   let A set-matrix-from-agent list_who
+  let flag possible list_who tarea
+  
   show list_who
+  
+  if flag = false
+  [
+    report []
+  ]
+
 ;  show B
   let resultado iteration A X B list_who tarea
   let final extract_whos list_who resultado
-  show resultado
+;  show resultado
   
   report final
   
@@ -236,3 +244,40 @@ to-report extract_req_task[tarea]
   
   report B
 end
+
+to-report possible[ list_id tarea]
+  
+
+  let sumtiem 0
+  let sumres 0
+  let sumcomp 0
+  let sumcal 0
+  let temp 0
+  let flag false
+  
+  
+  
+  while [not empty? list_id]
+  [
+    set temp first list_id 
+    set list_id remove-item 0 list_id
+    
+    ask worker temp[
+      
+      set sumtiem sumtiem + tiempo
+      set sumres sumres + recurso
+      set sumcomp sumcomp + competencia
+      set sumcal sumcal + calidad
+    ]
+  ]
+  
+  ask tarea[
+    if  tiempo <= sumtiem and recurso <= sumres and competencia <= sumcomp and calidad <= sumcal
+    [
+      set flag true
+    ]
+  ]
+  
+  report flag
+end
+  

@@ -1,0 +1,154 @@
+to-report distribute_tasks[ list_id_agents tarea ]
+  
+  let timeT 0
+  let skillsT 0
+  let qualityT 0
+  let resourceT 0
+  let result []
+  
+  ask tarea [
+   set timeT tiempo
+   set resourceT recurso
+   set skillsT competencia
+   set qualityT calidad 
+  ]
+  
+  let features extract_features list_id_agents
+  let p first features 
+  let temp distribuye p timeT
+  set result lput temp result
+  
+  set temp distribuye item 1 features resourceT
+  set result lput temp result
+  
+  set temp distribuye item 2 features skillsT
+  set result lput temp result
+  
+  set temp distribuye item 3 features qualityT
+  set result lput temp result
+  
+  report result  
+  
+end
+
+
+
+to-report extract_features[list_id]
+  
+  let result []
+  let tiemp []
+  let recur []
+  let compet []
+  let calid []
+  let temp 0
+  
+  while[ not empty? list_id]
+  [
+     set temp first list_id
+     set list_id remove-item 0 list_id
+     
+     ask worker temp[
+        set tiemp lput tiempo tiemp
+        set recur lput recurso recur
+        set compet lput competencia compet
+        set calid lput calidad calid
+       ]
+  ]
+  
+  set result lput tiemp result
+  set result lput recur result
+  set result lput compet result
+  set result lput calid result
+  
+  report result
+end
+
+to-report distribuye [ data total ]
+  
+ 
+  let p length data
+  let avg total / p
+  let result n-values p [0]
+  let i 0
+  let temp 0
+  let diff 0
+  
+  
+  while[ total != 0]
+  [
+    
+    set temp item i data
+    set diff item i result
+  ;;  show total 
+;;    show result
+    
+    ifelse diff = 0
+    [
+       ifelse (temp >= avg)
+       [
+         set result replace-item i result avg
+         set total total - avg
+       ]
+       [
+         set result replace-item i result temp
+         set total total - temp
+       ]
+    ]
+    [
+      ifelse ( temp - diff ) < total
+      [
+        set result replace-item i result temp
+        set total total - ( temp - diff )
+      ]
+      [
+        set result replace-item i result  (diff + total)
+        set total 0
+      ]    
+            
+     ]
+    
+   
+    ifelse i = (p - 1)
+    [
+        set i 0
+    ]
+    [
+      set i i + 1
+    ]
+  ]
+;;  show result
+  
+  report result
+end
+
+to set_agents_features [list_id features]
+  
+  let tiem item 0 features
+  let res item 1 features
+  let ski item 2 features
+  let qua item 3 features
+  let p length tiem
+  let id 0
+  let i 0
+  
+  while [ i < p ]
+  [
+    set id item i list_id
+    
+    ask worker id [
+      set tiempoA item i tiem
+      set recursoA item i res
+      set competenciaA item i ski
+      set calidadA item i qua
+      
+     ; show tiempoA
+;      show recursoA
+ ;     show competenciaA
+  ;    show calidadA
+    ]
+    
+    set i i + 1
+    
+  ]
+  
+end
