@@ -82,12 +82,15 @@ to-report iteration[ A X B whos tarea]
    if t = 0
    [
      set flag false
+     
    ]
    
-   if k > 1000
+   if k > 200
    [
      set flag false 
+     set select []
    ]
+   show ( word "infac: " item pos result )
    set k k + 1
 ]
    report select

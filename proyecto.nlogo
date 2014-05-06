@@ -38,6 +38,8 @@ to run-experiment
 
   let admin get-manager
   
+  
+  
   if admin != nobody
   [
     
@@ -204,11 +206,11 @@ to evaluate-msg
          [
 
            set finished 0
-     ;      set enable 1
+           set enable 1
          ]
     
       ask administrator who [
-      ;  set enable 1 
+        set enable 1 
       ] 
     ]
       set-current-plot "Tasks vs #Agents"
@@ -223,10 +225,7 @@ to evaluate-msg
       ;;evaluamos la coalición
       set team_select solve_coalition list_to_team workers homework id_tarea
       
-      ask administrators [
-        ; show tarea_actual 
-        ]
- 
+    
       ifelse length team_select > 0
       [
        
@@ -264,7 +263,7 @@ to evaluate-msg
          
         ask administrator who 
         [
-        ;  set enable 1
+          set enable 1
         ]
       ]
           
@@ -291,50 +290,65 @@ to evaluate-and-reply-cfp [msg]
 
 
   let id_tarea get-content msg
+   
+  let receiver read-from-string first get-receivers msg
   
-  let receiver who
   let tiemp -1
   let compet -1
   let recurs -1
   let calid -1
   let replay_msg ""
+  let temp 0
   
   ask worker receiver [
      set tiemp tiempo
      set compet competencia
      set recurs recurso
      set calid calidad
-    ]
+     
   
-  ifelse( enable = 1)
-  [
+     ifelse( enable = 1)
+     [
 ;;    ask administrator read-from-string sender [     add-intention "listen-to-messages" "true" ]
 
 ;; checar si cumple con los requisitos de la tarea
 
-    ask homework id_tarea[
+       ; show (word "id_tarea:" id_tarea )
+;        show ( word "recibe: " receiver )
+        
+        set temp homework id_tarea
+ 
+        if temp != nobody
+        [
+          ask homework id_tarea[
       
-       ifelse tiempo <= tiemp and compet >= competencia and recurs >= recurso and calid >= calidad
-       [
+            ifelse tiempo <= tiemp and compet >= competencia and recurs >= recurso and calid >= calidad
+            [
+          
+              ask worker receiver [
+                send add-content id_tarea create-reply "inform" msg
+              ]
+            ]
+            [
+              ask worker receiver [
+                send add-content (word "unreach:" id_tarea) create-reply "inform" msg    
+              ]
+         
+            ]
+          ]
+        ]
 
-         ask worker receiver[
-         send add-content id_tarea create-reply "inform" msg
-         ]
-       ]
-       [
-         ask worker receiver[
-          send add-content (word "unreach:" id_tarea) create-reply "inform" msg    
-         ]
-       ]
-   ]
-
+     ]
+     [
+       set temp homework id_tarea
+ 
+        if temp != nobody
+        [
+          send add-content "unavailable" create-reply "inform" msg    
+        ]
+     ]
 
   ]
-  [
-      send add-content "unavailable" create-reply "inform" msg    
-    ]
-
-  
 end
 
 to finish_task_worker [msg]
@@ -364,11 +378,6 @@ end
 to check_finish_task
   
   ask homework who [
-  
-;;  show "check"
-;;  show list_workers
-;;  show finished
-
   
   if not empty? list_workers and finished  = length list_workers
   [
@@ -473,7 +482,7 @@ BUTTON
 43
 go
 run-experiment
-NIL
+T
 1
 T
 OBSERVER
