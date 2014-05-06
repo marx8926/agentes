@@ -180,7 +180,7 @@ to execute-task-worker
       let msg create-message "task_worker"
       set msg add-content "finish" msg
       let manager_id 0
-      set enable 1
+      ;set enable 1
       
       let tarea homework tarea_asignada
       

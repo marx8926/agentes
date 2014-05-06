@@ -84,10 +84,10 @@ to run-experiment
     [
       ;; seleccionar una de las tareas asignadas no completadas
       
-      set tarea_actual get_tarea_libre tareas_asignadas tareas_completadas
+      ;set tarea_actual get_tarea_libre tareas_asignadas tareas_completadas
       set tarea_actual nobody
       
-      ;show tarea_actual
+      show tarea_actual
 ;      show member? tarea_actual tareas_completadas
       
       if tarea_actual != nobody
@@ -132,7 +132,9 @@ to run-experiment
   ;;reseateamos el plot
   reset-task_num_workers "Tasks vs #Agents"
   reset-task_time_fixed "Time finished vs Tasks"
+
   ask homeworks [
+
     execute-intentions
     task_num_workers "Tasks vs #Agents" who  
     task_time_fixed "Time finished vs Tasks"  who      
@@ -381,7 +383,6 @@ to finish_task_worker [msg]
   ask administrator who
   [
    
-     show tarea_actual
     let ta homework tarea_actual
     
     if ta != nobody
@@ -408,7 +409,6 @@ to check_finish_task
   
   ask homework who [
   
-  show list_workers
   
   if not empty? list_workers and finished  = length list_workers
   [
@@ -448,28 +448,45 @@ to finish_task_team [msg]
      
      move-to one-of patches with [(pcolor = violet) and (not any? administrators-here)]
      
+       ;; enviamos un mensaje de fin a la tarea para su destrucción
+       
      ask homework id_sender [
        add-intention "must-die" "true"       
      ]
      
   ]
   
-  ;; enviamos un mensaje de fin a la tarea para su destrucción
+
   
   
   
 end
 
 to must-die
-  
+  let idx 0  
   ask homework who
   [
     output-show (word "finished task : " fin)
     show "finished task"
     
+   
+      let temp list_workers
+      ;;activamos a todos los workers que participaron en la tarea
+      
+      while [ not empty? temp]
+      [
+        set idx first temp
+        set temp remove-item 0 temp
+        
+        ask worker idx [
+          set enable 1
+        ]
+         
+      ]
     set enable -1
     setxy 20 20
     hide-turtle
+    
     ;die
   ]
 end

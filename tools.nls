@@ -56,7 +56,6 @@ to move-hw-group [ hw lista]
   ask hw[
     set xt xcor
     set yt ycor
-    set enable 0
   ]
   
   output-show "Workers to solve the task"
