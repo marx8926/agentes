@@ -15,7 +15,7 @@ workers-own [ team beliefs intentions incoming-queue habilidad enable tiempo rec
 delivers-own [hp team stock]
 abilities-own [hp team]
 administrators-own [ posi team enable beliefs intentions incoming-queue tareas_asignadas tareas_completadas tarea_actual ]
-homeworks-own [ posi team enable beliefs intentions incoming-queue inicio fin tiempo recurso competencia calidad list_workers finished administrador_id ]
+homeworks-own [ posi team enable beliefs intentions incoming-queue inicio fin tiempo recurso competencia calidad list_workers finished administrador_id list_tiempos]
 globals [tareas indexT axis_tasks axis_mng ]
 
 to setup
@@ -55,15 +55,18 @@ to run-experiment
     
     set tarea_actual get-task
     
-    if tarea_actual != nobody
+    ifelse tarea_actual != nobody
     [
           
       set msg add-content tarea_actual msg   
       
+      
       ;; asignar una sola vez la tarea
-      if member? tarea_actual tareas_asignadas [ 
+      if not member? tarea_actual tareas_asignadas [ 
         set tareas_asignadas lput tarea_actual tareas_asignadas
       ]
+      
+
       set enable 0
       let id who
     
@@ -72,9 +75,38 @@ to run-experiment
         set administrador_id id
         set enable 0
         set finished 0
+        set list_workers []
+
       ]
       output-show who
       broadcast-to workers msg ;;enviamos el mensaje por broadcast
+    ]
+    [
+      ;; seleccionar una de las tareas asignadas no completadas
+      
+      set tarea_actual get_tarea_libre tareas_asignadas tareas_completadas
+      set tarea_actual nobody
+      
+      ;show tarea_actual
+;      show member? tarea_actual tareas_completadas
+      
+      if tarea_actual != nobody
+      [
+         set msg add-content tarea_actual msg  
+         set enable 0
+         let id who
+    
+         ask homework tarea_actual [
+           output-show "Manager to task:"
+           set administrador_id id
+           set finished 0
+           set list_workers []
+
+         ]
+         output-show who
+         broadcast-to workers msg ;;enviamos el mensaje por broadcast
+      
+      ]
     ]
     
     ]    
@@ -82,8 +114,29 @@ to run-experiment
     
   ]
   ask workers [execute-intentions] ;;ejecutamos la intensión de escucha de los trabajadores
-  ask administrators [execute-intentions] ;; ejecutamos la intensión de escucha de los trabajadores
-  ask homeworks [execute-intentions]
+  
+  ;;reseteamos el plot
+   reset_manager_task_plot "Managers vs Tasks"
+  ask administrators [
+    
+   
+    if tarea_actual != nobody
+    [
+     execute-intentions
+    ]
+     ;;ploter las tareas
+     managers_task "Managers vs Tasks" who
+    
+    ] ;; ejecutamos la intensión de escucha de los trabajadores
+  
+  ;;reseateamos el plot
+  reset-task_num_workers "Tasks vs #Agents"
+  reset-task_time_fixed "Time finished vs Tasks"
+  ask homeworks [
+    execute-intentions
+    task_num_workers "Tasks vs #Agents" who  
+    task_time_fixed "Time finished vs Tasks"  who      
+  ]
   
  tick
 
@@ -164,7 +217,6 @@ to evaluate-msg
   
   ]
   
-  set indexT indexT + 1
   
   ifelse length list_eval > 0
   [
@@ -176,47 +228,34 @@ to evaluate-msg
     ifelse length team_select > 0
     [
           
+           ask homework id_tarea
+           [
+
+             set list_workers team_select
+             set finished 0
+  
+           ]
+           
       set distribucion distribute_tasks  team_select homework id_tarea 
       set_agents_features  team_select distribucion id_tarea
       
       move-hw-manager id_tarea who 
       move-hw-group homework id_tarea team_select
       
-      ask homework id_tarea
-     [
-
-        set list_workers team_select
-       ; show "workers"
-;        show list_workers
-        set finished 0
-;        set enable 0
-      ]
+     
       
       ask administrator who
       [
         set tarea_actual id_tarea
-        set enable 0
+        ;set enable 0
        
       ]
       ;;    set member_teams lput length team_select member_teams
     ]
     [
+       
       
-         ask homework id_tarea
-         [
-
-           set finished 0
-           set enable 1
-         ]
-    
-      ask administrator who [
-        set enable 1 
-      ] 
     ]
-      set-current-plot "Tasks vs #Agents"
-      plotxy indexT length team_select
-    
-    
     
   ]
   [
@@ -234,52 +273,36 @@ to evaluate-msg
        [
 
         set list_workers team_select
-;        show "workers"
-;        show list_workers
         set finished 0
-        set enable 0
        ]
         set distribucion distribute_tasks  team_select homework id_tarea 
         set_agents_features  team_select distribucion id_tarea 
         
         move-hw-manager id_tarea who 
         move-hw-group homework id_tarea team_select
-        
-      
-        
-        ask administrator who
-        [
-          set enable 0
-        ]
+       
       ] 
       [
         
-         ask homework id_tarea
-         [
-
-           set finished 0
-           set enable 1
-         ]
-         
-        ask administrator who 
+        
+        ;; si todos los agentes no pueden hacer la tarea
+        if length list_to_team = persons 
         [
-          set enable 1
-        ]
+          ask workers
+          [
+            add-intention "comer-recurso" "true" 
+            add-intention "comer-skills" "true"
+          ]
+        ] 
       ]
           
-     
-      
-                    
-      set-current-plot "Tasks vs #Agents"
-      plotxy indexT length team_select
-;;      set member_teams lput length team_select member_teams
+
     ]
     [      
-       ask administrator who [
+      ask administrator who [
        ; set enable 1
       ] 
-          set-current-plot "Tasks vs #Agents"
-          plotxy indexT 0
+          
     ]
   ]
 
@@ -358,14 +381,20 @@ to finish_task_worker [msg]
   ask administrator who
   [
    
-    ask homework tarea_actual[
-     set finished finished + 1 
-
-     ;;la tarea checa si ya termino
-     add-intention "check_finish_task" "true"
-     
-    ]
+     show tarea_actual
+    let ta homework tarea_actual
     
+    if ta != nobody
+    [
+      ask ta
+      [
+       set finished finished  + 1
+
+       ;;la tarea checa si ya termino
+       add-intention "check_finish_task" "true"
+     
+      ]
+    ]
     
   ]
   
@@ -379,13 +408,16 @@ to check_finish_task
   
   ask homework who [
   
+  show list_workers
+  
   if not empty? list_workers and finished  = length list_workers
   [
    
     let msg create-message "task_team"
     set msg add-content "finish" msg
         
-    set fin ticks
+    set fin ticks - inicio
+    
     set msg add-receiver administrador_id msg        
     send msg
     
@@ -406,7 +438,13 @@ to finish_task_team [msg]
   ask administrator id_rec
   [
      set enable 1 
-     set tareas_completadas lput id_sender tareas_completadas
+     
+     if not member? id_sender tareas_completadas[
+       
+       set tareas_completadas lput id_sender tareas_completadas
+     ]
+;; plotear las tareas completadas
+     
      
      move-to one-of patches with [(pcolor = violet) and (not any? administrators-here)]
      
@@ -426,8 +464,13 @@ to must-die
   
   ask homework who
   [
-    show "finished task "
-    die
+    output-show (word "finished task : " fin)
+    show "finished task"
+    
+    set enable -1
+    setxy 20 20
+    hide-turtle
+    ;die
   ]
 end
 @#$#@#$#@
@@ -541,10 +584,10 @@ PENS
 "default" 1.0 1 -16777216 true "" ""
 
 OUTPUT
-879
-18
-1297
-272
+871
+15
+1289
+269
 11
 
 SWITCH
@@ -561,7 +604,7 @@ show_messages
 SLIDER
 178
 58
-215
+211
 157
 num_tareas
 num_tareas
@@ -578,7 +621,7 @@ PLOT
 442
 278
 612
- Managers vs Tasks
+Managers vs Tasks
 Managers
 Tasks
 0.0
@@ -589,8 +632,8 @@ true
 false
 "" ""
 PENS
-"asignada" 1.0 0 -10899396 true "" ""
-"completada" 1.0 0 -13345367 true "" ""
+"asignada" 1.0 1 -10899396 true "" ""
+"completada" 1.0 1 -13345367 true "" ""
 
 PLOT
 885
@@ -608,8 +651,8 @@ true
 false
 "" ""
 PENS
-"fixed" 1.0 0 -2674135 true "" ""
-"teams" 1.0 0 -13345367 true "" ""
+"fixed" 1.0 1 -2674135 true "" ""
+"teams" 1.0 1 -13345367 true "" ""
 
 PLOT
 888

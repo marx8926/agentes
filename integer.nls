@@ -16,6 +16,10 @@ to-report solve_coalition[lista trabajadores tarea]
   
   if flag = false
   [
+    ask administrator who[
+     set enable 1 
+    ]
+        
     report []
   ]
 
@@ -23,6 +27,14 @@ to-report solve_coalition[lista trabajadores tarea]
   let resultado iteration A X B list_who tarea
   let final extract_whos list_who resultado
 ;  show resultado
+
+  if empty? final
+  [
+    ask administrator who[
+     set enable 1 
+    ]
+        
+  ]
   
   report final
   
@@ -43,6 +55,7 @@ to-report iteration[ A X B whos tarea]
     
    set i 0
    let flag true
+   let last_val -10000000
    
    while [ flag ]
    [
@@ -79,6 +92,17 @@ to-report iteration[ A X B whos tarea]
 ;   show select
    set t item pos result
    
+   ifelse last_val < t [
+     set last_val t
+   ]
+   [
+     set flag false
+     set select [] 
+   ]
+   
+  ; show (word "lastval: " last_val )
+   
+   
    if t = 0
    [
      set flag false
@@ -90,7 +114,7 @@ to-report iteration[ A X B whos tarea]
      set flag false 
      set select []
    ]
-   show ( word "infac: " item pos result )
+;   show ( word "infac: " item pos result )
    set k k + 1
 ]
    report select
@@ -280,6 +304,7 @@ to-report possible[ list_id tarea]
       set flag true
     ]
   ]
+  
   
   report flag
 end

@@ -1,13 +1,20 @@
-to task_num_workers[ name  element_x element_y]
+to task_num_workers[ name  element_x ]
   
     set-current-plot name
     let x 0
-    
+    let y 0
     ask homework element_x
     [
       set x posi
+      set y length list_workers
     ]
-    plotxy x element_y
+    plotxy x y
+end
+
+to reset-task_num_workers [name]
+   set-current-plot name
+   set-current-plot-pen "default"
+   plot-pen-reset  
 end
 
 to task_time_fixed[ name  element_x]
@@ -15,11 +22,13 @@ to task_time_fixed[ name  element_x]
     set-current-plot name
     let x 0
     let y 0
+    let final 0
     
     ask homework element_x
     [
       set x posi
-      set y tiempo
+      set y ceiling tiempo
+      set final fin
     ]
     
     set-current-plot-pen "fixed"
@@ -28,7 +37,16 @@ to task_time_fixed[ name  element_x]
     
     set-current-plot-pen "teams"
     
-    plotxy x 0
+    plotxy x final
+end
+
+to reset-task_time_fixed[ name]
+  set-current-plot name
+  set-current-plot-pen "fixed"
+  plot-pen-reset
+  
+  set-current-plot-pen "teams"
+  plot-pen-reset
 end
 
 to task_features[ name  element_x]
@@ -50,6 +68,8 @@ to task_features[ name  element_x]
       set compet competencia
     ]
     
+
+    
     set-current-plot-pen "tiempo"    
     plotxy x tiemp
     
@@ -67,15 +87,31 @@ to managers_task [ name element_x ]
    
    
    set-current-plot name
+   ;;clear-plot
    
    ask administrator element_x[
    
     set-current-plot-pen "asignada"
+;    show (word "num_asignadas: " length tareas_asignadas)
+    
     plotxy posi length tareas_asignadas
-     
+   
     set-current-plot-pen "completada"
+
+ ;   show (word "num_completadas: " length tareas_completadas)
+    
     plotxy posi length tareas_completadas
     
     
    ]
+end
+
+to reset_manager_task_plot[ name]
+  
+  set-current-plot name
+  
+  set-current-plot-pen "asignada"
+  plot-pen-reset
+  set-current-plot-pen "completada"
+  plot-pen-reset
 end

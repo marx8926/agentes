@@ -34,7 +34,7 @@ to setup-homeworks
 
     set recurso 1 +  random 99
     set competencia 1 + random 59
-    set calidad 1 + random 59 
+    set calidad 20 
     set tiempo 1 + random  159
     set inicio 0
     set id who
@@ -42,6 +42,7 @@ to setup-homeworks
     set beliefs []
     set intentions []
     set incoming-queue []
+    set list_tiempos []
     
     set temp lput tiempo temp
     set temp lput recurso temp
@@ -51,6 +52,7 @@ to setup-homeworks
     set finished 0 ;; contador
     set administrador_id 0
     set enable 1
+    set fin 0
     
 
     set posi axis_tasks
@@ -59,7 +61,7 @@ to setup-homeworks
   ;  set axis_tasks lput who axis_tasks
     
 ;;    add-intention "check_finish_task" "true"
-    task_num_workers "Tasks vs #Agents" who 0    
+    task_num_workers "Tasks vs #Agents" who    
     task_time_fixed "Time finished vs Tasks"  who    
     task_features "Features vs Tasks"  who
     
@@ -98,7 +100,7 @@ to setup-administrators
     ;; agregamos elementos al eje X
     
     set posi axis_mng
-    managers_task " Managers vs Tasks" who
+    managers_task "Managers vs Tasks" who
     set axis_mng axis_mng + 1
     
    ; set axis_mng lput who axis_mng
@@ -158,7 +160,7 @@ to setup-workers
     add-intention "listen-to-messages" "true"
     set recurso 1 + random 49
     set competencia 1 + random 29
-    set calidad 1 + random 29
+    set calidad 20
     set tiempo 1 + random 79
     
     set temp []

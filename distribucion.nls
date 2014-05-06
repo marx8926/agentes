@@ -133,6 +133,9 @@ to set_agents_features [list_id features id_tarea]
   let id 0
   let i 0
   
+  ask homework id_tarea [
+       set inicio ticks 
+  ]
   while [ i < p ]
   [
     set id item i list_id
@@ -144,6 +147,7 @@ to set_agents_features [list_id features id_tarea]
       set calidadA item i qua
       set inicio ticks
       set tarea_asignada id_tarea
+      set enable 0
       
      ; show tiempoA
 ;      show recursoA
@@ -161,6 +165,8 @@ end
 to execute-task-worker
   
   ;ask workers with [team = 1] [move-to one-of patches with [(pcolor = red) and (not any? workers-here)]]
+  let temp 0
+  let ini 0
   ask worker who
   [
     ifelse  ticks <= (inicio + tiempoA)
@@ -180,9 +186,13 @@ to execute-task-worker
       
       if tarea != nobody
       [
+        set temp tiempoA
+        set ini inicio
+        
         ask tarea
         [
           set manager_id administrador_id
+          set list_tiempos lput (ticks - ini - temp) list_tiempos
         ]
       
         set msg add-receiver manager_id msg

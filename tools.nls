@@ -20,7 +20,11 @@ to-report get-task
   
   ;;set tareas [   who ] of one-of homeworks with [enable = 1]
  
-  let result [who] of one-of homeworks with [enable = 1]
+  let result one-of homeworks with [enable = 1]
+  if result != nobody
+  [
+    set result [who] of result
+  ]
   report result
   
 ;;  output-show (word "Task to solve:" tareas
@@ -42,6 +46,7 @@ to move-hw-group [ hw lista]
   let j 0
   let xt 0
   let yt 0
+  let mult 1
   let temp 0
   let coord []
   let indices [
@@ -62,13 +67,19 @@ to move-hw-group [ hw lista]
     set lista remove-item 0 lista
     let feat []
     
+    if i = 6
+    [
+      set mult mult + 1
+      set i 0
+    ]
+    
     ask worker temp[
         
         set enable 0
         set coord item i indices
         
-        set xcor xt + first coord 
-        set ycor yt + last coord
+        set xcor xt + (first coord ) * mult
+        set ycor yt + ( last coord ) * mult
         
         set feat lput tiempoA feat
         set feat lput recursoA feat
@@ -86,9 +97,61 @@ end
 
 
 to comer-recurso
+  let init ticks
   
+  ask worker who
+  [
+   set recurso recurso + 5 
+   setxy min-pxcor + random 5 max-pycor - random 5
+
+  ]
+  show "comio recursos :3"
+  
+  ;while[ (init + 1) < ticks]
+;  [
+    
+ ; ]
+ ;  move-to one-of patches with [(pcolor = red) and (not any? workers-here)]
+   
 end
 
 to comer-skills
   
+  let init ticks
+  
+  ask worker who
+  [
+    set competencia competencia + 5 
+    setxy max-pxcor - random 5 max-pycor + random 5
+  ]
+  show "comio skills"
+  
+;  while[ (init + 1) < ticks]
+;  [
+    
+;  ]
+   move-to one-of patches with [(pcolor = red) and (not any? workers-here)]
+  
+end
+
+;; seleccionamos una tarea no completada
+to-report get_tarea_libre [ asignadas completadas]
+  
+  let result nobody
+  let temp 0
+  
+  while[ not empty? asignadas]
+  [
+    set temp first asignadas
+    set asignadas remove-item 0 asignadas
+    
+    if not member? temp completadas
+    [
+      set result temp
+    ]
+  ]
+;  show result
+;  show completadas
+  
+  report result
 end
