@@ -1,0 +1,81 @@
+to task_num_workers[ name  element_x element_y]
+  
+    set-current-plot name
+    let x 0
+    
+    ask homework element_x
+    [
+      set x posi
+    ]
+    plotxy x element_y
+end
+
+to task_time_fixed[ name  element_x]
+  
+    set-current-plot name
+    let x 0
+    let y 0
+    
+    ask homework element_x
+    [
+      set x posi
+      set y tiempo
+    ]
+    
+    set-current-plot-pen "fixed"
+    
+    plotxy x y
+    
+    set-current-plot-pen "teams"
+    
+    plotxy x 0
+end
+
+to task_features[ name  element_x]
+  
+    set-current-plot name
+    let x 0
+    let y 0
+    let tiemp 0
+    let recur 0
+    let cali 0
+    let compet 0
+    
+    ask homework element_x
+    [
+      set x posi
+      set tiemp tiempo
+      set recur recurso
+      set cali calidad
+      set compet competencia
+    ]
+    
+    set-current-plot-pen "tiempo"    
+    plotxy x tiemp
+    
+    set-current-plot-pen "recurso"    
+    plotxy x recur
+    
+    set-current-plot-pen "calidad"    
+    plotxy x cali
+    
+    set-current-plot-pen "competencia"    
+    plotxy x compet
+end
+
+to managers_task [ name element_x ]
+   
+   
+   set-current-plot name
+   
+   ask administrator element_x[
+   
+    set-current-plot-pen "asignada"
+    plotxy posi length tareas_asignadas
+     
+    set-current-plot-pen "completada"
+    plotxy posi length tareas_completadas
+    
+    
+   ]
+end

@@ -1,4 +1,4 @@
-__includes [ "init.nls" "tools.nls" "bdi.nls" "communication.nls" "integer.nls" "distribucion.nls"]
+__includes [ "init.nls" "tools.nls" "bdi.nls" "communication.nls" "integer.nls" "distribucion.nls" "metrics.nls" ]
 
 breed [administrators administrator] ;; managers
 breed [delivers deliver] ;; admin
@@ -14,11 +14,14 @@ workers-own [ team beliefs intentions incoming-queue habilidad enable tiempo rec
   ] ;; Esta es la variable relacionada con los recursos.
 delivers-own [hp team stock]
 abilities-own [hp team]
-administrators-own [ team enable beliefs intentions incoming-queue tareas_asignadas tareas_completadas tarea_actual ]
-homeworks-own [ team enable beliefs intentions incoming-queue inicio fin tiempo recurso competencia calidad list_workers finished administrador_id ]
-globals [tareas indexT ]
+administrators-own [ posi team enable beliefs intentions incoming-queue tareas_asignadas tareas_completadas tarea_actual ]
+homeworks-own [ posi team enable beliefs intentions incoming-queue inicio fin tiempo recurso competencia calidad list_workers finished administrador_id ]
+globals [tareas indexT axis_tasks axis_mng ]
 
 to setup
+  set axis_tasks 0
+  set axis_mng 0
+  
   set indexT 0
   clear-all
   setup-patches
@@ -169,10 +172,7 @@ to evaluate-msg
     
     set team_select solve_coalition list_eval workers homework id_tarea
    
-     ask administrators [
-       ;  show tarea_actual 
-        ]
-    
+        
     ifelse length team_select > 0
     [
           
@@ -496,27 +496,12 @@ SLIDER
 30
 56
 63
-206
+154
 managers
 managers
 0
-20
 5
-1
-1
-NIL
-VERTICAL
-
-SLIDER
-78
-55
-111
-205
-executors
-executors
-0
-50
-10
+3
 1
 1
 NIL
@@ -526,66 +511,25 @@ SLIDER
 122
 57
 155
-207
+161
 persons
 persons
 0
-100
-50
-1
-1
-NIL
-VERTICAL
-
-SWITCH
-15
-226
-118
-259
-teams
-teams
-1
-1
--1000
-
-SLIDER
-230
-57
-263
-207
-time
-time
-0
-100
-55
-1
-1
-NIL
-VERTICAL
-
-SLIDER
-177
-57
-210
-207
-skills
-skills
-0
-100
-52
+20
+10
 1
 1
 NIL
 VERTICAL
 
 PLOT
-23
-281
+19
+258
 279
-464
+413
 Tasks vs #Agents
-Number of task
-Number of agent to solve
+Tasks
+# agents
 0.0
 10.0
 0.0
@@ -594,25 +538,99 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" ""
+"default" 1.0 1 -16777216 true "" ""
+
+OUTPUT
+879
+18
+1297
+272
+11
 
 SWITCH
-145
-236
-291
-269
+17
+165
+144
+198
 show_messages
 show_messages
 1
 1
 -1000
 
-OUTPUT
-879
-18
-1314
-576
-11
+SLIDER
+178
+58
+215
+157
+num_tareas
+num_tareas
+0
+20
+10
+1
+1
+NIL
+VERTICAL
+
+PLOT
+20
+442
+278
+612
+ Managers vs Tasks
+Managers
+Tasks
+0.0
+5.0
+0.0
+20.0
+true
+false
+"" ""
+PENS
+"asignada" 1.0 0 -10899396 true "" ""
+"completada" 1.0 0 -13345367 true "" ""
+
+PLOT
+885
+279
+1173
+442
+Time finished vs Tasks
+Tasks
+Time finished
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"fixed" 1.0 0 -2674135 true "" ""
+"teams" 1.0 0 -13345367 true "" ""
+
+PLOT
+888
+451
+1175
+620
+Features vs Tasks
+Tasks
+Features
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"tiempo" 1.0 0 -7500403 true "" ""
+"recurso" 1.0 0 -2674135 true "" ""
+"calidad" 1.0 0 -955883 true "" ""
+"competencia" 1.0 0 -13345367 true "" ""
 
 @#$#@#$#@
 ## WHAT IS IT?

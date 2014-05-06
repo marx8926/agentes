@@ -26,7 +26,7 @@ to setup-homeworks
    let id 0
    let temp []
    
-  create-homeworks 10
+  create-homeworks num_tareas
   [
     set color cyan
     setxy random-xcor random-ycor
@@ -51,7 +51,18 @@ to setup-homeworks
     set finished 0 ;; contador
     set administrador_id 0
     set enable 1
+    
+
+    set posi axis_tasks
+    set axis_tasks axis_tasks + 1
+    ;; agregamos al eje
+  ;  set axis_tasks lput who axis_tasks
+    
 ;;    add-intention "check_finish_task" "true"
+    task_num_workers "Tasks vs #Agents" who 0    
+    task_time_fixed "Time finished vs Tasks"  who    
+    task_features "Features vs Tasks"  who
+    
     output-show temp
   ]
   
@@ -68,7 +79,7 @@ end
 to setup-administrators
  
   output-show "Managers"
-  create-administrators 3
+  create-administrators managers
   [
     set color sky
     set team 3
@@ -83,6 +94,15 @@ to setup-administrators
     
     output-show who
     add-intention "evaluate-msg" "true"    
+    
+    ;; agregamos elementos al eje X
+    
+    set posi axis_mng
+    managers_task " Managers vs Tasks" who
+    set axis_mng axis_mng + 1
+    
+   ; set axis_mng lput who axis_mng
+    
   ]  
   
 ;  ask administrators with [team = 3][ move-to one-of patches with [(pcolor = brown) and (not any? administrators-here)]]
@@ -127,7 +147,7 @@ to setup-workers
   
   output-show "Workers"
   
-  create-workers 10    ;; Toma el valor del numero de trabajadores que se quieren en el mundo 
+  create-workers persons    ;; Toma el valor del numero de trabajadores que se quieren en el mundo 
   [
     set color 104 ;; El trabajador del equipo 1
     set team 1
@@ -175,7 +195,7 @@ end
 to setup-abilities
   create-abilities 1
   [
-    set color lime
+    set color orange
     set hp 5
     set team 2
     set size 4
